@@ -158,6 +158,7 @@ class MPC:
     
     def lb_dist_cons(self, _, *args):
         state = args
+        print(state[int(S.dist)])
         return state[int(S.dist)] + 0.65
     
     def ub_dist_cons(self, _, *args):
