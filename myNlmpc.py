@@ -129,7 +129,11 @@ class MPC:
                 {'type': 'ineq', 'fun': self.lb_dist_cons, 'args': state},
                 {'type': 'ineq', 'fun': self.ub_dist_cons, 'args': state},
                 {'type': 'ineq', 'fun': self.lb_v_cons, 'args': state},
-                {'type': 'ineq', 'fun': self.ub_v_cons, 'args': state}
+                {'type': 'ineq', 'fun': self.ub_v_cons, 'args': state},
+                {'type': 'ineq', 'fun': self.lb_ax_cons, 'args': state},
+                {'type': 'ineq', 'fun': self.ub_ax_cons, 'args': state},
+                {'type': 'ineq', 'fun': self.lb_xJerk_cons, 'args': state},
+                {'type': 'ineq', 'fun': self.ub_xJerk_cons, 'args': state},
             ]
         result = minimize(self.cost_function, u_init, args=state, bounds=self.bounds, constraints=cons, method='SLSQP')
         return result.x[0:2] # 制御入力を return
@@ -148,7 +152,9 @@ class MPC:
             cost += (self.q2 * (xJerk ** 2)) + (self.q3 * (ax ** 2)) + (self.q4 * (ay ** 2))
             if v > 17:
                 cost = 10000
-            if dist > 1:
+            if dist > 0.65:
+                cost = 10000
+            if dist < -0.65:
                 cost = 10000
         return cost
     
@@ -156,26 +162,57 @@ class MPC:
         dist, i = self.kd_tree.query([px, py], k=1)
         return dist, i
     
-    def lb_dist_cons(self, _, *args):
+    def lb_dist_cons(self, u, *args):
         state = args
-        print(state[int(S.dist)])
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
         return state[int(S.dist)] + 0.65
     
-    def ub_dist_cons(self, _, *args):
+    def ub_dist_cons(self, u, *args):
         state = args
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
         return 0.65 - state[int(S.dist)]
     
-    def lb_v_cons(self, _, *args):
+    def lb_v_cons(self, u, *args):
         state = args
-        return state[int(S.v)] - 8
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
+        return state[int(S.v)] - 5
 
-    def ub_v_cons(self, _, *args):
+    def ub_v_cons(self, u, *args):
         state = args
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
         return 16.7 - state[int(S.v)]
+    
+    def lb_ax_cons(self, u, *args):
+        state = args
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
+        return state[int(S.ax)] + 1
+
+    def ub_ax_cons(self, u, *args):
+        state = args
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
+        return 2 - state[int(S.ax)]
+    
+    def lb_xJerk_cons(self, u, *args):
+        state = args
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
+        return state[int(S.xJerk)] + 1
+
+    def ub_xJerk_cons(self, u, *args):
+        state = args
+        for i in range(self.N):
+            state = self.update_state(state, u[i*2:(i+1)*2])
+        return 1 - state[int(S.xJerk)]
 
 
 # Closed-loop シミュレーション
-sim_time = 7.0 # 10秒間のシミュレーション
+sim_time = 6.0 # 10秒間のシミュレーション
 mpc = MPC()
 sim_steps = int(sim_time/mpc.dt)
 state0 = np.zeros(mpc.nx)
@@ -189,6 +226,7 @@ for step in range(sim_steps):
     u = mpc.solve(state)
     state = mpc.update_state(state, u)
     print(state)
+    print(u)
     states.append(state)
     us.append(u)
 
