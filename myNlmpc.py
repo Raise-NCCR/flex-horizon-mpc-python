@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree
 from scipy.optimize import minimize
+from scipy import interpolate
 
 # state = v, a, b, wz, psi, x, y, dist, ax, ay, bDot, wzDot, xJerk, yJerk, i
 # u = jerk, delta
@@ -80,7 +81,8 @@ class MPC:
         self.vehicle = Vehicle()
         # 問題設定
         self.dt = 0.1  # 離散化ステップ
-        self.N = 10      # ホライゾン離散化グリッド数 (MPCなので荒め)
+        self.N = 15     # ホライゾン離散化グリッド数 (MPCなので荒め)
+        self.N_con = 10
         self.nx = len(S)      # 状態空間の次元
         self.nu = len(U)      # 制御入力の次元
 
@@ -91,12 +93,14 @@ class MPC:
         self.q4 = 0.15
 
         # 経路の読み込み
-        tmp = pd.read_csv("zhouPath.csv", header=None)
-        self.pathRef = tmp.T.values.tolist()
-        self.kd_tree = KDTree([row[0:2] for row in self.pathRef])
+        tmp = pd.read_csv("newPath.csv")
+        idx = range(len(tmp))
+        x = interpolate.interp1d(tmp['distance'], idx)
+        #self.pathRef = tmp.T.values.tolist()
+        #self.kd_tree = KDTree([row[0:2] for row in self.pathRef])
 
         # 制約
-        self.bounds = [(-1, 1), (-1.57, 1.57)] * self.N
+        self.bounds = [(-1, 1), (-1.57, 1.57)] * (self.N_con+1)
 
 
     # 状態更新関数
@@ -121,10 +125,7 @@ class MPC:
                     i]
         return state_next
 
-    def solve(self, state, u_init=None):
-        # 初期状態
-        if u_init == None:
-            u_init = np.zeros(self.nu*self.N)
+    def solve(self, state, u_init):
         cons = [
                 {'type': 'ineq', 'fun': self.lb_dist_cons, 'args': state},
                 {'type': 'ineq', 'fun': self.ub_dist_cons, 'args': state},
@@ -136,13 +137,24 @@ class MPC:
                 {'type': 'ineq', 'fun': self.ub_xJerk_cons, 'args': state},
             ]
         result = minimize(self.cost_function, u_init, args=state, bounds=self.bounds, constraints=cons, method='SLSQP')
-        return result.x[0:2] # 制御入力を return
+        return result.x # 制御入力を return
+
+    def update(self, state, u):
+        for i in range(self.N):
+            if i >= self.N_con:
+                state = self.update_state(state, u[self.N_con*2:(self.N_con+1)*2])
+            else:
+                state = self.update_state(state, u[i*2:(i+1)*2])
+        return state
 
     def cost_function(self, u, *args):
         state = args[0]
         cost = 0
         for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+            if i >= self.N_con:
+                state = self.update_state(state, u[self.N_con*2:(self.N_con+1)*2])
+            else:
+                state = self.update_state(state, u[i*2:(i+1)*2])
             v = state[int(S.v)]
             dist = state[int(S.dist)]
             ax = state[int(S.ax)]
@@ -151,11 +163,11 @@ class MPC:
             # cost += (pow(self.q1, 2)*pow((16.7-v), 2)) + (pow(self.q2, 2) * pow(xJerk, 2)) + (pow(self.q3, 2) * pow(ax, 2)) + (pow(self.q4, 2) * pow(ay, 2))
             cost += (self.q2 * (xJerk ** 2)) + (self.q3 * (ax ** 2)) + (self.q4 * (ay ** 2))
             if v > 17:
-                cost = 10000
+                cost = 10000000
             if dist > 0.65:
-                cost = 10000
+                cost = 10000000
             if dist < -0.65:
-                cost = 10000
+                cost = 10000000
         return cost
     
     def find_closest_point(self, px, py):
@@ -164,71 +176,67 @@ class MPC:
     
     def lb_dist_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return state[int(S.dist)] + 0.65
     
     def ub_dist_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return 0.65 - state[int(S.dist)]
     
     def lb_v_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return state[int(S.v)] - 5
 
     def ub_v_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return 16.7 - state[int(S.v)]
     
     def lb_ax_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return state[int(S.ax)] + 1
 
     def ub_ax_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return 2 - state[int(S.ax)]
     
     def lb_xJerk_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return state[int(S.xJerk)] + 1
 
     def ub_xJerk_cons(self, u, *args):
         state = args
-        for i in range(self.N):
-            state = self.update_state(state, u[i*2:(i+1)*2])
+        state = self.update(state, u)
         return 1 - state[int(S.xJerk)]
 
 
 # Closed-loop シミュレーション
-sim_time = 6.0 # 10秒間のシミュレーション
+sim_time = 7.0 # 10秒間のシミュレーション
 mpc = MPC()
 sim_steps = int(sim_time/mpc.dt)
 state0 = np.zeros(mpc.nx)
 state0[int(S.v)] = 16.7
 u0 = np.zeros(mpc.nu)
+u_init0 = np.zeros(mpc.nu*(mpc.N_con+1))
 states = [state0]
 us = [u0]
 state = state0
 for step in range(sim_steps):
     print('t =', step*mpc.dt)
-    u = mpc.solve(state)
-    state = mpc.update_state(state, u)
+    u = mpc.solve(state, u_init0)
+    state = mpc.update_state(state, u[0:2])
     print(state)
-    print(u)
+    print(u[0:2])
     states.append(state)
-    us.append(u)
+    us.append(u[0:2])
+    for i in range(mpc.N_con):
+        u_init0[i*2:(i+1)*2] = u[(i+1)*2:(i+2)*2]
+    u_init0[mpc.N_con*2:(mpc.N_con+1)*2] = [0, 0]
 
 
 # # シミュレーション結果をプロット
