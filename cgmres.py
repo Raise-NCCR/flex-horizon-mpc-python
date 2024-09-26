@@ -1,5 +1,4 @@
 import numpy as np
-import scipy as sci
 import time
 import matplotlib.pyplot as plt
 

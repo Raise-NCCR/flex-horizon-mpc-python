@@ -58,7 +58,7 @@ class MPC:
         # 問題設定
         self.dt = 0.1  # 離散化ステップ
         self.ratio = 2
-        self.N = 15     # ホライゾン離散化グリッド数 (MPCなので荒め)
+        self.N = 30    # ホライゾン離散化グリッド数 (MPCなので荒め)
         self.nx = len(S)      # 状態空間の次元
         self.ndx= len(DS)
         self.nu = len(U)      # 制御入力の次元
@@ -69,7 +69,7 @@ class MPC:
         q[int(S.ay)] = 0.3
         q[int(S.xJerk)] = 0.4
         self.Q = casadi.diag(q)
-        s = np.ones(self.nx)
+        s = np.zeros(self.nx)
         self.S = casadi.diag(s)
         self.R = casadi.diag(np.ones(self.nu))
 
@@ -313,12 +313,22 @@ while t < sim_time:
 # xs4 = [x[3] for x in xs]
 # tgrid = [sampling_time*k for k in range(sim_steps)]
 
+xsV = list(row[int(S.v)].full()[0][0] for row in xs)
+xsA = list(row[int(S.a)].full()[0][0] for row in xs)
+xsB = list(row[int(S.b)].full()[0][0] for row in xs)
+xsWz = list(row[int(S.wz)].full()[0][0] for row in xs)
+xsPsi = list(row[int(S.psi)].full()[0][0] for row in xs)
 xsX = list(row[int(S.x)].full()[0][0] for row in xs)
 xsY = list(row[int(S.y)].full()[0][0] for row in xs)
 xsAx = list(row[int(S.ax)].full()[0][0] for row in xs)
 xsAy = list(row[int(S.ay)].full()[0][0] for row in xs)
 xsXjerk = list(row[int(S.xJerk)].full()[0][0] for row in xs)
 output_df = pd.DataFrame({
+    'v': xsV,
+    'a': xsA,
+    'b': xsB,
+    'wz':xsWz,
+    'psi':xsPsi,
     'x': xsX,
     'y': xsY,
     'ax': xsAx,
