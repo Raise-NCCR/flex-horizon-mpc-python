@@ -5,17 +5,28 @@ import numpy as np
 df = pd.read_csv('zhouPath.csv', header=None)
 
 # 1,2行目にあるx, y座標のデータを抽出
-x = df.iloc[0].values
-y = df.iloc[1].values
+x = df.iloc[0].values[::10]
+y = df.iloc[1].values[::10]
 
 # 曲率データ（3行目）
-curvature = df.iloc[2].values
+# curvature = df.iloc[2].values
 #cur = np.zeros(len(curvature))
 #for i in range(len(curvature)):
 #    if curvature[i] == 0:
 #        cur[i] = 0
 #    else:
 #        cur[i] = 1/curvature[i]
+
+# 1次微分 (速度ベクトル)
+dx = np.gradient(x)
+dy = np.gradient(y)
+
+# 2次微分 (加速度ベクトル)
+ddx = np.gradient(dx)
+ddy = np.gradient(dy)
+
+# 曲率の計算
+curvature = np.abs(dx * ddy - dy * ddx) / (dx**2 + dy**2)**1.5
 
 
 # 距離を計算
@@ -32,5 +43,5 @@ output_df = pd.DataFrame({
 })
 
 # 結果を新しいCSVファイルに保存
-output_df.to_csv('newPathC.csv', index=False)
+output_df.to_csv('disCur.csv', index=False)
 
