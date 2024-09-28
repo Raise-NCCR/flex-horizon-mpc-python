@@ -4,7 +4,7 @@ import casadi
 
 from casadiMpc import MPC
 from myEnum import S
-from plotReuslt import plotReuslt
+from plotResult import plotReuslt
 
 
 # Closed-loop シミュレーション
