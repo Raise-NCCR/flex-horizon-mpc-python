@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from myEnum import S, U
+from vehicleEnum import S, U
 
 i_x = int(S.x)
 i_y = int(S.y)

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from math import pi, cos, sin
 
-from myEnum import S, U
+from vehicleEnum import S, U
 
 vehicle_length = 2.5
 vehicle_width = 1.5

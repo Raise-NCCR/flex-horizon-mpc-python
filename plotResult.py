@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from myEnum import S, U
+from vehicleEnum import S, U
 
 # # シミュレーション結果をプロット
 def plotReuslt(xs, us, zhouX, zhouY, show):

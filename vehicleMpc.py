@@ -4,15 +4,17 @@ import pandas as pd
 import casadi
 from matplotlib import pyplot as plt
 
-from myEnum     import S, DS, U
+from vehicleEnum     import S, DS, U
 from vehicle    import Vehicle
+from periodMpc  import PeriodMPC
+from execPeriodMpc import execPeriodMpc
 
-class MPC:
-    def __init__(self, refFile):
+class VehicleMPC:
+    def __init__(self, refFile, N):
         # 問題設定
         self.dt     = 1.5       # 離散化ステップ
         self.ratio  = 2
-        self.N      = 30        # ホライゾン離散化グリッド数 (MPCなので荒め)
+        self.N      = N         # ホライゾン離散化グリッド数 (MPCなので荒め)
         self.nx     = len(S)    # 状態空間の次元
         self.ndx    = len(DS)   # 微分行列の次元
         self.nu     = len(U)    # 制御入力の次元
@@ -39,10 +41,14 @@ class MPC:
         y       = path['y'].to_numpy()
         distance= path['Distance'].to_numpy()
         cur     = path['Curvature'].to_numpy()
+        cur_diff= np.diff(cur)
         
+        self.curDiff= casadi.interpolant('interp', 'linear', [distance[:len(distance)-1:]], cur_diff)
         self.cur    = casadi.interpolant('interp', 'linear', [distance], cur)
         self.refX   = casadi.interpolant('interp', 'linear', [distance], x)
         self.refY   = casadi.interpolant('interp', 'linear', [distance], y)
+
+        self.dest   = distance[-1]
 
         self.vehicle = Vehicle(self.cur)
 
@@ -99,10 +105,11 @@ class MPC:
     def make_F(self):
         state   = casadi.MX.sym('state', self.nx)
         control = casadi.MX.sym('control', self.nu)
+        dt      = casadi.MX.sym('dt', 1)
         
-        state_next = self.vehicle.update_state(state, control, self.dt, self.ratio)
+        state_next = self.vehicle.update_state(state, control, dt)
         
-        F = casadi.Function("F", [state, control],[state_next],["x","u"],["x_next"])
+        F = casadi.Function("F", [state, control, dt],[state_next],["x","u","p"],["x_next"])
         return F
 
     def stage_cost(self, x, u):
@@ -119,28 +126,31 @@ class MPC:
         X = [casadi.MX.sym(f"x_{k}",self.nx) for k in range(self.N+1)]
         U = [casadi.MX.sym(f"u_{k}",self.nu) for k in range(self.N)]
         G = []
+        P = [casadi.MX.sym(f"p_{k}",1) for k in range(self.N)]
 
         J = 0
         for k in range(self.N):
             J += self.stage_cost(X[k],U[k])
-            eq = X[k+1] - F(x=X[k],u=U[k])["x_next"]
+            eq = X[k+1] - F(x=X[k],u=U[k],p=P[k])["x_next"]
             G.append(eq)
         J += self.terminal_cost(X[self.N])
 
         option  = {"print_time":False,"ipopt":{"print_level":0}}
-        nlp     = {"x":casadi.vertcat(*X,*U),"f":J,"g":casadi.vertcat(*G)}
+        nlp     = {"x":casadi.vertcat(*X,*U),"f":J,"g":casadi.vertcat(*G),"p":casadi.vertcat(*P)}
         self.S  = casadi.nlpsol("S","ipopt",nlp,option)
         return
 
     def compute_optimal_control(self,x_init,x0):
         x_init = x_init.full().ravel().tolist()
 
+        dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
+        
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N
         lbg = [0]*self.nx*self.N 
         ubg = [0]*self.nx*self.N 
 
-        res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0)
+        res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0, p=dt)
         offset  = self.nx*(self.N+1)
         
         x0      = res["x"]

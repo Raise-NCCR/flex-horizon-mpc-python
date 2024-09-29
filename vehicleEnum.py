@@ -18,7 +18,7 @@ class S(IntEnum):
     omegaDot= auto()
     xJerk   = auto()
     yJerk   = auto()
-    dt      = auto()
+    t       = auto()
 
 class DS(IntEnum):
     vDot    = 0
@@ -35,6 +35,7 @@ class DS(IntEnum):
     ay      = auto()
     xJerk   = auto()
     yJerk   = auto()
+    dt      = auto()
 
 class U(IntEnum):
     jerk    = 0

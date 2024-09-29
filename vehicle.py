@@ -1,7 +1,7 @@
 import casadi
 import numpy as np
 
-from myEnum import S, DS, U
+from vehicleEnum import S, DS, U
 
 class Vehicle:
     def __init__(self, cur):
@@ -23,7 +23,7 @@ class Vehicle:
     
         self.cur = cur  # 曲率データ
 
-    def kinematics(self, state, control):
+    def kinematics(self, state, control, ds):
         d       = state[int(S.d)]
         v       = state[int(S.v)]
         a       = state[int(S.a)]
@@ -57,9 +57,10 @@ class Vehicle:
         ay      = a*casadi.sin(beta)
         xJerk   = jerk
         yJerk   = jerk*casadi.sin(beta)
-        return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk) / sDot
+        dt      = sDot * ds / v
+        return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk, dt) / sDot
 
-    def dynamics(self, state, control):
+    def dynamics(self, state, control, ds):
         d       = state[int(S.d)]
         v       = state[int(S.v)]
         a       = state[int(S.a)]
@@ -91,42 +92,37 @@ class Vehicle:
         ay      = v*betaDot + a*beta + v*omega
         xJerk   = jerk - a*beta*omega - v*betaDot*omega - v*beta*omegaDot
         yJerk   = a*betaDot + jerk*beta + a*betaDot + a*omega + v*omegaDot
-        return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk) / sDot
+        dt      = sDot * ds/v
+        return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk, dt) / sDot
 
     # 状態更新関数
-    def update_state(self, state, control, dt, ratio):
-        max_c   = 0
+    def update_state(self, state, control, dt):
         dd      = 10
-        len     = int(30 / dt)
+        
+        state_next = state
 
-        for i in range(len):
-            c       = casadi.fabs(self.cur(state[int(S.d)]+state[int(S.v)]*i*dt))
-            max_c   = casadi.if_else(c>max_c, c, max_c)
-        
-        dt          = casadi.if_else(max_c>0.006, dt/dd, dt*ratio/dd)
-        state_next  = state
-        
+        ddt = dt/dd
         for i in range(dd):
-            dstate      = casadi.if_else(state_next[int(S.v)]>5, self.dynamics(state_next, control), self.kinematics(state_next, control))
+            dstate      = casadi.if_else(state_next[int(S.v)]>5, self.dynamics(state_next, control, ddt), self.kinematics(state_next, control, ddt))
             state_next  = [
-                            state_next[int(S.d)]    + dt,
-                            state_next[int(S.v)]    + dstate[int(DS.vDot)]*dt, 
-                            state_next[int(S.a)]    + dstate[int(DS.aDot)]*dt,
-                            state_next[int(S.beta)] + dstate[int(DS.betaDot)]*dt,
-                            state_next[int(S.delta)]+ dstate[int(DS.deltaDot)]*dt,
-                            state_next[int(S.omega)]+ dstate[int(DS.omegaDot)]*dt,
-                            state_next[int(S.psi)]  + dstate[int(DS.psiDot)]*dt,
-                            state_next[int(S.theta)]+ dstate[int(DS.thetaDot)]*dt,
-                            state_next[int(S.x)]    + dstate[int(DS.xDot)]*dt,
-                            state_next[int(S.y)]    + dstate[int(DS.yDot)]*dt,
-                            state_next[int(S.dist)] + dstate[int(DS.distDot)]*dt,
+                            state_next[int(S.d)]    + ddt,
+                            state_next[int(S.v)]    + dstate[int(DS.vDot)]*ddt, 
+                            state_next[int(S.a)]    + dstate[int(DS.aDot)]*ddt,
+                            state_next[int(S.beta)] + dstate[int(DS.betaDot)]*ddt,
+                            state_next[int(S.delta)]+ dstate[int(DS.deltaDot)]*ddt,
+                            state_next[int(S.omega)]+ dstate[int(DS.omegaDot)]*ddt,
+                            state_next[int(S.psi)]  + dstate[int(DS.psiDot)]*ddt,
+                            state_next[int(S.theta)]+ dstate[int(DS.thetaDot)]*ddt,
+                            state_next[int(S.x)]    + dstate[int(DS.xDot)]*ddt,
+                            state_next[int(S.y)]    + dstate[int(DS.yDot)]*ddt,
+                            state_next[int(S.dist)] + dstate[int(DS.distDot)]*ddt,
                             dstate[int(DS.betaDot)],
                             dstate[int(DS.omegaDot)],
                             dstate[int(DS.ax)],
                             dstate[int(DS.ay)],
                             dstate[int(DS.xJerk)],
                             dstate[int(DS.yJerk)],
-                            dt,
+                            state_next[int(S.t)]    + dstate[int(DS.dt)],
                         ]
         # d = state[int(S.d)]
         # state[int(S.dist)] = (state[int(S.x)]-self.refX(d))**2+(state[int(S.y)]-self.refY(d))**2

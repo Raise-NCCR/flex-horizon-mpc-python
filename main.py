@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import casadi
+import time
 
-from vehicleMpc import MPC
-from myEnum import S, U
+from vehicleMpc import VehicleMPC
+from vehicleEnum import S, U
 from plotResult import plotReuslt
 
 
@@ -15,7 +16,9 @@ zhouDist= df['Distance'].to_numpy()
 zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
 
-mpc = MPC(refFile)
+N = 15
+
+mpc = VehicleMPC(refFile, 15)
 
 ref             = np.zeros(mpc.nx)
 ref[int(S.x)]   = zhouX[-1]
@@ -39,25 +42,40 @@ us      = []    # 入力
 t       = 0 
 times   = [t]   # 時間（経路上の距離）
 
+start = time.time()
 sim_len = zhouDist[-1]
 while t < sim_len:
     u_opt,x0 = mpc.compute_optimal_control(x,x0)
-    x = F(x=x,u=u_opt)["x_next"]
+    x = x0[len(S):len(S)*2:]
     t = x[int(S.d)]
     xs.append(x)
     xx.append(x0)
     us.append(u_opt)
     times.append(t)
-    print('t =', t)
-    print("u: ",u_opt)
-    print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
-    print("[refx,refy]: ",[mpc.refX(x[int(S.d)]), mpc.refY(x[int(S.d)])])
-    print("v: ",x[int(S.v)])
-    print("a: ", x[int(S.a)])
-    print("dist: ",x[int(S.dist)])
-    print("beta:    ",x[int(S.beta)])
-    print("------------------------")
+    # print('s= ', t)
+    # print('t: ',x[int(S.t)])
+    # print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
+    # print("------------------------")
 
+    # print('s= ', t)
+    # print('t: ',x[int(S.t)])
+    # print("u: ",u_opt)
+    # print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
+    # print("[refx,refy]: ",[mpc.refX(x[int(S.d)]), mpc.refY(x[int(S.d)])])
+    # print("v: ",x[int(S.v)])
+    # print("a: ", x[int(S.a)])
+    # print("dist: ",x[int(S.dist)])
+    # print("beta:    ",x[int(S.beta)])
+    # print("------------------------")
+end = time.time()
+
+print('time', end-start)
+print('s= ', t)
+print('t: ',x[int(S.t)])
+print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
+print("------------------------")
+
+np.save('result/xs.npy', xx)
 np.save('result/xx.npy', xx)
 
 show = [True] * (len(S)+len(U))
