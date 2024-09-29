@@ -28,13 +28,15 @@ class Vehicle:
         v       = state[int(S.v)]
         a       = state[int(S.a)]
         beta    = state[int(S.beta)]
+        delta   = state[int(S.delta)]
         omega   = state[int(S.omega)]
         psi     = state[int(S.psi)]
         theta   = state[int(S.theta)]
         dist    = state[int(S.dist)]
+        omegaDot= state[int(S.omegaDot)]
+        betaDot = state[int(S.betaDot)]
 
         jerk    = control[int(U.jerk)]
-        delta   = control[int(U.delta)]
 
         cur     = self.cur(d)
         rho     = casadi.if_else(cur==0, np.inf, 1/cur)
@@ -44,6 +46,7 @@ class Vehicle:
         vDot    = a
         aDot    = jerk
         betaDot = casadi.atan(casadi.tan(delta)/2) - beta
+        deltaDot   = control[int(U.deltaDot)]
         omegaDot= casadi.sin(beta)*v/self.car_lf - omega
         psiDot  = omega
         thetaDot= omega - sDot*cur
@@ -54,19 +57,20 @@ class Vehicle:
         ay      = a*casadi.sin(beta)
         xJerk   = jerk
         yJerk   = jerk*casadi.sin(beta)
-        return casadi.vertcat(vDot, aDot, betaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk) / sDot
+        return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk) / sDot
 
     def dynamics(self, state, control):
         d       = state[int(S.d)]
         v       = state[int(S.v)]
         a       = state[int(S.a)]
         beta    = state[int(S.beta)]
+        delta   = state[int(S.delta)]
         omega   = state[int(S.omega)]
         psi     = state[int(S.psi)]
         theta   = state[int(S.theta)]
         dist    = state[int(S.dist)]
+        
         jerk    = control[int(U.jerk)]
-        delta   = control[int(U.delta)]
 
         cur     = self.cur(d)
         rho     = casadi.if_else(cur==0, np.inf, 1/cur)
@@ -76,6 +80,7 @@ class Vehicle:
         vDot    = a
         aDot    = jerk
         betaDot = self.a1*beta/v + self.a2*omega/((v ** 2)) - omega + self.a3*delta/v + self.a4*a*beta/v
+        deltaDot= control[int(U.deltaDot)]
         omegaDot= self.b1*beta + self.b2*omega/v + self.b3*delta
         psiDot  = omega
         thetaDot= omega - sDot*cur
@@ -86,7 +91,7 @@ class Vehicle:
         ay      = v*betaDot + a*beta + v*omega
         xJerk   = jerk - a*beta*omega - v*betaDot*omega - v*beta*omegaDot
         yJerk   = a*betaDot + jerk*beta + a*betaDot + a*omega + v*omegaDot
-        return casadi.vertcat(vDot, aDot, betaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk) / sDot
+        return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk) / sDot
 
     # 状態更新関数
     def update_state(self, state, control, dt, ratio):
@@ -108,6 +113,7 @@ class Vehicle:
                             state_next[int(S.v)]    + dstate[int(DS.vDot)]*dt, 
                             state_next[int(S.a)]    + dstate[int(DS.aDot)]*dt,
                             state_next[int(S.beta)] + dstate[int(DS.betaDot)]*dt,
+                            state_next[int(S.delta)]+ dstate[int(DS.deltaDot)]*dt,
                             state_next[int(S.omega)]+ dstate[int(DS.omegaDot)]*dt,
                             state_next[int(S.psi)]  + dstate[int(DS.psiDot)]*dt,
                             state_next[int(S.theta)]+ dstate[int(DS.thetaDot)]*dt,

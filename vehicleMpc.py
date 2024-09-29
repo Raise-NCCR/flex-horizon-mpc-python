@@ -12,7 +12,7 @@ class MPC:
         # 問題設定
         self.dt     = 1.5       # 離散化ステップ
         self.ratio  = 2
-        self.N      = 15        # ホライゾン離散化グリッド数 (MPCなので荒め)
+        self.N      = 30        # ホライゾン離散化グリッド数 (MPCなので荒め)
         self.nx     = len(S)    # 状態空間の次元
         self.ndx    = len(DS)   # 微分行列の次元
         self.nu     = len(U)    # 制御入力の次元
@@ -20,14 +20,19 @@ class MPC:
         # 重み係数
         q = np.zeros(self.nx)
         s = np.zeros(self.nx)
+        r = np.zeros(self.nu)
         
         q[int(S.ax)]    = 0.3
         q[int(S.ay)]    = 0.3
         q[int(S.xJerk)] = 0.4
+
+        s[int(S.x)]     = 1.0
+        s[int(S.y)]     = 1.0
+        s[int(S.v)]     = 1.0
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
-        self.R = casadi.diag(np.ones(self.nu))
+        self.R = casadi.diag(r)
 
         path    = pd.read_csv(refFile)
         x       = path['x'].to_numpy()
@@ -48,6 +53,8 @@ class MPC:
         self.amin       = -1
         self.betamax    = 10*pi/180.0
         self.betamin    = -10*pi/180.0
+        self.deltamax   = 40*pi/180.0
+        self.deltamin   = -40*pi/180.0
         self.distmax    = 0.1
         self.distmin    = -0.1
         self.xJerkmax   = 1
@@ -58,6 +65,7 @@ class MPC:
         self.x_ub[int(S.v)]     = self.vmax
         self.x_ub[int(S.a)]     = self.amax
         self.x_ub[int(S.beta)]  = self.betamax
+        self.x_ub[int(S.delta)] = self.deltamax
         self.x_ub[int(S.dist)]  = self.distmax
         self.x_ub[int(S.xJerk)] = self.xJerkmax
         
@@ -66,14 +74,15 @@ class MPC:
         self.x_lb[int(S.v)]     = self.vmin
         self.x_lb[int(S.a)]     = self.amin
         self.x_lb[int(S.beta)]  = self.betamin
+        self.x_lb[int(S.delta)]  = self.deltamin
         self.x_lb[int(S.dist)]  = self.distmin
         self.x_lb[int(S.xJerk)] = self.xJerkmin
 
 
         self.jerkmax    = 1
         self.jerkmin    = -1
-        self.deltamax   = 40*pi/180.0
-        self.deltamin   = -40*pi/180.0  
+        self.deltamax   = 12*pi/180.0
+        self.deltamin   = -12*pi/180.0  
         
         self.u_ub = [self.jerkmax, self.deltamax]
         self.u_lb = [self.jerkmin, self.deltamin]

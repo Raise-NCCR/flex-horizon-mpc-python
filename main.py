@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import casadi
 
-from casadiMpc import MPC
-from myEnum import S
+from vehicleMpc import MPC
+from myEnum import S, U
 from plotResult import plotReuslt
 
 
@@ -33,10 +33,11 @@ x0[int(S.v):mpc.nx*(mpc.N+1):mpc.nx] = 16.7
 x           = casadi.DM.zeros(mpc.nx)
 x[int(S.v)] = 16.7
 
-xs      = [x]
-us      = []
-t       = 0
-times   = [t]
+xs      = [x]   # 状態
+xx      = []    # 状態予測
+us      = []    # 入力
+t       = 0 
+times   = [t]   # 時間（経路上の距離）
 
 sim_len = zhouDist[-1]
 while t < sim_len:
@@ -44,6 +45,7 @@ while t < sim_len:
     x = F(x=x,u=u_opt)["x_next"]
     t = x[int(S.d)]
     xs.append(x)
+    xx.append(x0)
     us.append(u_opt)
     times.append(t)
     print('t =', t)
@@ -56,4 +58,7 @@ while t < sim_len:
     print("beta:    ",x[int(S.beta)])
     print("------------------------")
 
-plotReuslt(xs, zhouX, zhouY)
+np.save('result/xx.npy', xx)
+
+show = [True] * (len(S)+len(U))
+plotReuslt(xs, us, zhouX, zhouY, show)

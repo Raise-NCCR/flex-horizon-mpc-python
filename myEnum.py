@@ -5,6 +5,7 @@ class S(IntEnum):
     v       = auto()
     a       = auto()
     beta    = auto()
+    delta   = auto()
     omega   = auto()
     psi     = auto()
     theta   = auto()
@@ -23,6 +24,7 @@ class DS(IntEnum):
     vDot    = 0
     aDot    = auto()
     betaDot = auto()
+    deltaDot= auto()
     omegaDot= auto()
     psiDot  = auto()
     thetaDot= auto()
@@ -36,4 +38,4 @@ class DS(IntEnum):
 
 class U(IntEnum):
     jerk    = 0
-    delta   = auto()
+    deltaDot= auto()
