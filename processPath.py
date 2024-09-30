@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # CSVファイルを読み込み（headerなし）
-df = pd.read_csv('zhouPath.csv', header=None)
+df = pd.read_csv('csv/path.csv', header=None)
 
 # 1,2行目にあるx, y座標のデータを抽出
 x = df.iloc[0].values[::10]
@@ -43,5 +43,5 @@ output_df = pd.DataFrame({
 })
 
 # 結果を新しいCSVファイルに保存
-output_df.to_csv('disCur.csv', index=False)
+output_df.to_csv('csv/disCur_path.csv', index=False)
 

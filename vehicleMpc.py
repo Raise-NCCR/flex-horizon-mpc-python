@@ -50,7 +50,7 @@ class VehicleMPC:
 
         self.dest   = distance[-1]
 
-        self.vehicle = Vehicle(self.cur)
+        self.vehicle = Vehicle(self.refX,self.refY,self.cur)
 
         # 制約
         self.vmax       = 16.7
@@ -61,8 +61,8 @@ class VehicleMPC:
         self.betamin    = -10*pi/180.0
         self.deltamax   = 40*pi/180.0
         self.deltamin   = -40*pi/180.0
-        self.distmax    = 0.1
-        self.distmin    = -0.1
+        self.distmax    = 0.1**2
+        self.distmin    = -0.1**2
         self.xJerkmax   = 1
         self.xJerkmin   = -1
 
@@ -151,6 +151,8 @@ class VehicleMPC:
         ubg = [0]*self.nx*self.N 
 
         res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0, p=dt)
+        hfnc    = self.S.get_function('nlp_hess_l')
+        print(hfnc)
         offset  = self.nx*(self.N+1)
         
         x0      = res["x"]

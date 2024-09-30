@@ -4,7 +4,7 @@ import numpy as np
 from vehicleEnum import S, DS, U
 
 class Vehicle:
-    def __init__(self, cur):
+    def __init__(self, refX, refY, cur):
         Mass        = 1100.0    # 車両重量
         YawMoment   = 1600.0    # ヨー慣性モーメント
         Cp_f        = 32000.0   # 前輪コーナリングパワー
@@ -20,7 +20,9 @@ class Vehicle:
         self.b1 = (Cp_r*car_lr-Cp_f*self.car_lf)/YawMoment
         self.b2 = -(Cp_f*(self.car_lf**2)+Cp_r*((car_lr ** 2)))/YawMoment
         self.b3 = (Cp_f*self.car_lf)/YawMoment
-    
+
+        self.refX= refX    
+        self.refY= refY
         self.cur = cur  # 曲率データ
 
     def kinematics(self, state, control, ds):
@@ -92,6 +94,10 @@ class Vehicle:
         ay      = v*betaDot + a*beta + v*omega
         xJerk   = jerk - a*beta*omega - v*betaDot*omega - v*beta*omegaDot
         yJerk   = a*betaDot + jerk*beta + a*betaDot + a*omega + v*omegaDot
+        ax      = ax*sDot
+        ay      = ay*sDot
+        xJerk   = xJerk*sDot
+        yJerk   = yJerk*sDot
         dt      = sDot * ds/v
         return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk, dt) / sDot
 

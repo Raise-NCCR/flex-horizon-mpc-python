@@ -19,23 +19,23 @@ class PeriodMPC:
         
         # q[int(S.var)]   = 1
 
-        # s[int(S.d)]     = 1
+        s[int(S.d)]     = 1/1000
 
-        r[int(U.dDot)]  = 100000000
+        r[int(U.dDot)]  = 1/1000
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
         self.R = casadi.diag(r)
 
         end = np.zeros(self.nx)
-        end[int(S.d)] = dest
+        end[int(S.d)] = dest + 20
         self.end = end
 
         self.curDiff    = curDiff
 
         # 制約
         varmax      = 0.006
-        dmax        = dest
+        dmax        = dest + 20
 
         self.x_ub   = [float('inf')] * self.nx
         
@@ -72,13 +72,14 @@ class PeriodMPC:
         return casadi.vertcat(*state_next)
 
     def stage_cost(self, x, u):
-        # cost = casadi.if_else(u[int(U.dDot)] == 0, casadi.dot(self.Q@x,x), casadi.dot(self.Q@x,x) + self.R/casadi.dot(u,u))
-        cost = self.R/(casadi.dot(u,u))
+        # cost = casadi.if_else(u[int(U.dDot)] == 0, 100, self.R/casadi.dot(u,u))
+        cost = 1/casadi.dot(u,u)
         return cost
     
-    def terminal_cost(self, x):
-        diff = x - self.end
-        cost = casadi.dot(self.S@diff,diff)
+    def terminal_cost(self, x, x0):
+        # diff = x - self.end
+        diff = x - x0
+        cost = 1/casadi.dot(diff,diff)
         return cost
     
     def make_nlp(self):
@@ -93,7 +94,7 @@ class PeriodMPC:
             J += self.stage_cost(X[k],U[k])
             eq = X[k+1] - F(x=X[k],u=U[k])["x_next"]
             G.append(eq)
-        # J += self.terminal_cost(X[self.N])
+        J += self.terminal_cost(X[self.N], X[0])
 
         option  = {"print_time":False,"ipopt":{"print_level":0}}
         nlp     = {"x":casadi.vertcat(*X,*U),"f":J,"g":casadi.vertcat(*G)}
