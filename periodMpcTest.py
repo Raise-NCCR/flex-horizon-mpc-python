@@ -8,7 +8,7 @@ from plotResult import plotReuslt
 
 
 # Closed-loop シミュレーション
-refFile = "csv/disCur_path.csv"
+refFile = "csv/disCur.csv"
 
 df      = pd.read_csv(refFile)
 zhouDist= df['Distance'].to_numpy()
@@ -16,15 +16,15 @@ zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
 cur     = df['Curvature'].to_numpy()
 
-# cur    = casadi.interpolant('interp', 'linear', [zhouDist], cur)
+cur    = casadi.interpolant('interp', 'linear', [zhouDist], cur)
 
-cur_diff= np.diff(cur)
-curDiff= casadi.interpolant('interp', 'linear', [zhouDist[:len(zhouDist)-1:]], cur_diff)
+# cur_diff= np.diff(cur)
+# curDiff= casadi.interpolant('interp', 'linear', [zhouDist[:len(zhouDist)-1:]], cur_diff)
 
-N = 15
+N = 10
 
-mpc = PeriodMPC(N,curDiff,zhouDist[-1])
-# mpc = PeriodMPC(N,cur,zhouDist[-1])
+# mpc = PeriodMPC(N,curDiff,zhouDist[-1])
+mpc = PeriodMPC(N,cur,zhouDist[-1])
 
 F = mpc.make_F()
 mpc.make_nlp()

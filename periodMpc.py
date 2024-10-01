@@ -35,7 +35,8 @@ class PeriodMPC:
 
         # 制約
         varmax      = 0.006
-        dmax        = dest + 20
+        dDotmin     = 1.0
+        dmax        = dest + dDotmin*N
 
         self.x_ub   = [float('inf')] * self.nx
         
@@ -44,7 +45,6 @@ class PeriodMPC:
         
         self.x_lb = [-float('inf')] * self.nx
 
-        dDotmin    = 1.0
         
         self.u_ub = [float('inf')] * self.nu
         self.u_lb = [-float('inf')] * self.nu
@@ -65,6 +65,7 @@ class PeriodMPC:
         new_d = state[int(S.d)] + control[int(U.dDot)]
         ds = casadi.linspace(state[int(S.d)], new_d, n)
         cur = self.curDiff(ds)
+        # cur_sum = casadi.sum2(cur)
         mean_cur = casadi.cumsum(cur)/n
         diff = cur - mean_cur
         var = casadi.dot(diff,diff)/n
@@ -79,7 +80,7 @@ class PeriodMPC:
     def terminal_cost(self, x, x0):
         # diff = x - self.end
         diff = x - x0
-        cost = 1/casadi.dot(diff,diff)
+        cost = 1/casadi.dot(self.S@diff,diff)
         return cost
     
     def make_nlp(self):
@@ -91,7 +92,7 @@ class PeriodMPC:
 
         J = 0
         for k in range(self.N):
-            J += self.stage_cost(X[k],U[k])
+            # J += self.stage_cost(X[k],U[k])
             eq = X[k+1] - F(x=X[k],u=U[k])["x_next"]
             G.append(eq)
         J += self.terminal_cost(X[self.N], X[0])

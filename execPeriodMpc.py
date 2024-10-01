@@ -19,7 +19,7 @@ def execPeriodMpc(curDiff, cur_x0, N, dest):
     total   = mpc.nx*(mpc.N+1) + mpc.nu*mpc.N
 
     x0      = casadi.DM.ones(total)
-    x0[int(S.d):mpc.nx*(mpc.N+1):len(S)] = cur_x0[int(VS.d):len(VS)*(N+1):len(VS)]
+    x0[int(S.d)] = cur_x0[int(VS.d)]
 
     x       = casadi.DM.zeros(mpc.nx)
     x[int(S.d)] = cur_x0[int(VS.d)]

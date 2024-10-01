@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 from vehicleEnum import S, U
 
@@ -9,7 +10,6 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
     xsV     = list(row[int(S.v)].full()[0][0] for row in xs)
     xsA     = list(row[int(S.a)].full()[0][0] for row in xs)
     xsBeta  = list(row[int(S.beta)].full()[0][0] for row in xs)
-    xsDelta = list(row[int(S.delta)].full()[0][0] for row in xs)
     xsOmega = list(row[int(S.omega)].full()[0][0] for row in xs)
     xsPsi   = list(row[int(S.psi)].full()[0][0] for row in xs)
     xsX     = list(row[int(S.x)].full()[0][0] for row in xs)
@@ -17,15 +17,15 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
     xsAx    = list(row[int(S.ax)].full()[0][0] for row in xs)
     xsAy    = list(row[int(S.ay)].full()[0][0] for row in xs)
     xsXjerk = list(row[int(S.xJerk)].full()[0][0] for row in xs)
+    xsT     = list(row[int(S.t)].full()[0][0] for row in xs)
 
     usJerk  = list(row[int(U.jerk)].full()[0][0] for row in us)
-    usDelta = list(row[int(U.deltaDot)].full()[0][0] for row in us)
+    usDelta = list(row[int(U.delta)].full()[0][0] for row in us)
 
     output_df = pd.DataFrame({
         'v'     :xsV,
         'a'     :xsA,
         'beta'  :xsBeta,
-        'delta' :xsDelta,
         'omega' :xsOmega,
         'psi'   :xsPsi,
         'x'     :xsX,
@@ -33,6 +33,7 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
         'ax'    :xsAx,
         'ay'    :xsAy,
         'xJerk' :xsXjerk,
+        't'     :xsT
     })
 
     output_df.to_csv('result/mpcX.csv', index=False)
@@ -56,7 +57,7 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
     plt.show()
     num += 1
 
-    time = xsD
+    time = xsT
     # v
     if (show[int(S.v)]):
         plt.figure(num)
@@ -86,17 +87,6 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
         plt.plot(time, xsBeta, '-')
         plt.xlabel('t')
         plt.ylabel('beta')
-        plt.grid()
-        plt.show()
-        num += 1
-
-    # delta
-    if (show[int(S.delta)]):
-        plt.figure(num)
-        plt.clf()
-        plt.plot(time, xsDelta, '-')
-        plt.xlabel('t')
-        plt.ylabel('delta')
         plt.grid()
         plt.show()
         num += 1
@@ -168,7 +158,7 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
         num += 1
 
     # delta
-    if (show[len(S)+int(U.deltaDot)]):
+    if (show[len(S)+int(U.delta)]):
         plt.figure(num)
         plt.clf()
         plt.plot(time[1::], usDelta, '-')

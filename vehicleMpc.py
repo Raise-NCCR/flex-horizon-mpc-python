@@ -28,9 +28,9 @@ class VehicleMPC:
         q[int(S.ay)]    = 0.3
         q[int(S.xJerk)] = 0.4
 
-        s[int(S.x)]     = 1.0
-        s[int(S.y)]     = 1.0
-        s[int(S.v)]     = 1.0
+        # s[int(S.x)]     = 1.0
+        # s[int(S.y)]     = 1.0
+        # s[int(S.v)]     = 1.0
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
@@ -56,11 +56,9 @@ class VehicleMPC:
         self.vmax       = 16.7
         self.vmin       = 0
         self.amax       = 2
-        self.amin       = -1
+        self.amin       = -2
         self.betamax    = 10*pi/180.0
         self.betamin    = -10*pi/180.0
-        self.deltamax   = 40*pi/180.0
-        self.deltamin   = -40*pi/180.0
         self.distmax    = 0.1**2
         self.distmin    = -0.1**2
         self.xJerkmax   = 1
@@ -71,7 +69,6 @@ class VehicleMPC:
         self.x_ub[int(S.v)]     = self.vmax
         self.x_ub[int(S.a)]     = self.amax
         self.x_ub[int(S.beta)]  = self.betamax
-        self.x_ub[int(S.delta)] = self.deltamax
         self.x_ub[int(S.dist)]  = self.distmax
         self.x_ub[int(S.xJerk)] = self.xJerkmax
         
@@ -80,15 +77,14 @@ class VehicleMPC:
         self.x_lb[int(S.v)]     = self.vmin
         self.x_lb[int(S.a)]     = self.amin
         self.x_lb[int(S.beta)]  = self.betamin
-        self.x_lb[int(S.delta)]  = self.deltamin
         self.x_lb[int(S.dist)]  = self.distmin
         self.x_lb[int(S.xJerk)] = self.xJerkmin
 
 
         self.jerkmax    = 1
         self.jerkmin    = -1
-        self.deltamax   = 12*pi/180.0
-        self.deltamin   = -12*pi/180.0  
+        self.deltamax   = 40*pi/180.0
+        self.deltamin   = -40*pi/180.0
         
         self.u_ub = [self.jerkmax, self.deltamax]
         self.u_lb = [self.jerkmin, self.deltamin]
@@ -151,11 +147,9 @@ class VehicleMPC:
         ubg = [0]*self.nx*self.N 
 
         res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0, p=dt)
-        hfnc    = self.S.get_function('nlp_hess_l')
-        print(hfnc)
         offset  = self.nx*(self.N+1)
         
         x0      = res["x"]
         u_opt   = x0[offset:offset+self.nu]
-        return u_opt, x0
+        return u_opt, x0, dt[0]
 

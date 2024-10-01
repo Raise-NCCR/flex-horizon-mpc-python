@@ -9,16 +9,16 @@ from plotResult import plotReuslt
 
 
 # Closed-loop シミュレーション
-refFile = "csv/disCur.csv"
+refFile = "csv/disCur_path.csv"
 
 df      = pd.read_csv(refFile)
 zhouDist= df['Distance'].to_numpy()
 zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
 
-N = 15
+N = 10
 
-mpc = VehicleMPC(refFile, 15)
+mpc = VehicleMPC(refFile, N)
 
 ref             = np.zeros(mpc.nx)
 ref[int(S.x)]   = zhouX[-1]
@@ -45,14 +45,15 @@ times   = [t]   # 時間（経路上の距離）
 start = time.time()
 sim_len = zhouDist[-1]
 while t < sim_len:
-    u_opt,x0 = mpc.compute_optimal_control(x,x0)
+    u_opt,x0,dt = mpc.compute_optimal_control(x,x0)
     x = x0[len(S):len(S)*2:]
     t = x[int(S.d)]
     xs.append(x)
-    xx.append(x0)
+    xx.append(x0[:len(S)*(N+1)])
     us.append(u_opt)
     times.append(t)
     print('s= ', t)
+    print('dt:', dt)
     print('t: ',x[int(S.t)])
     print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
     print("------------------------")
@@ -75,7 +76,8 @@ print('t: ',x[int(S.t)])
 print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
 print("------------------------")
 
-np.save('result/xs.npy', xx)
+np.save('result/us.npy', us)
+np.save('result/xs.npy', xs)
 np.save('result/xx.npy', xx)
 
 show = [True] * (len(S)+len(U))
