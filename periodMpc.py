@@ -45,7 +45,7 @@ class PeriodMPC:
         self.x_lb = [-float('inf')] * self.nx
 
         dDotMax     = 5.0
-        dDotmin     = 1
+        dDotmin     = 1.0
         
         self.u_ub = [float('inf')] * self.nu
         self.u_lb = [-float('inf')] * self.nu
@@ -82,7 +82,7 @@ class PeriodMPC:
     def terminal_cost(self, x, x0):
         # diff = x - self.end
         diff = x - x0
-        cost = 100/casadi.dot(diff,diff)
+        cost = 1000/casadi.dot(diff,diff)
         return cost
     
     def make_nlp(self):

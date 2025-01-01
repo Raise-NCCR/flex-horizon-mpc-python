@@ -18,9 +18,9 @@ zhouDist= df['Distance'].to_numpy()
 zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
 
-N = 10
+N = 30
 
-mpc = VehicleMPC(refFile, 15)
+mpc = VehicleMPC(refFile, N)
 
 ref             = np.zeros(mpc.nx)
 ref[int(S.x)]   = zhouX[-1]
@@ -48,16 +48,17 @@ p_ts = []
 
 
 sim_len = zhouDist[-1]
-while t < sim_len:
+while t < 350:
     start = time.process_time()
     dt,u_opt,x0 = mpc.compute_optimal_control(x,x0)
     end = time.process_time()
 
     p_ts.append(end-start)
-    ddt = int(dt/1)
+    step = 1.0
+    ddt = int(dt/step)
     print("dt: ",dt)
-    for i in range(ddt):
-        x = F(x=x,u=u_opt,p=1)["x_next"]
+    for i in range(ddt-1):
+        x = F(x=x,u=u_opt,p=step)["x_next"]
         xs.append(x)
         xx.append(x0)
         us.append(u_opt)
@@ -67,8 +68,9 @@ while t < sim_len:
         print('t: ',x[int(S.t)])
         print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
         print("v: ", x[int(S.v)])
+        print("dist: ", x[int(S.dist)])
         print("------------------------")
-    dt = dt - ddt
+    dt = dt - (ddt-1)*step
     if (dt != 0):
         x = F(x=x,u=u_opt,p=dt)["x_next"]
         # x = x0[len(S):len(S)*2:]
@@ -81,6 +83,7 @@ while t < sim_len:
         print('t: ',x[int(S.t)])
         print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
         print("v: ", x[int(S.v)])
+        print("dist: ", x[int(S.dist)])
         print("------------------------")
 
     # print('s= ', t)

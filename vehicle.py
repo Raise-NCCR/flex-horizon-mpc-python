@@ -149,4 +149,6 @@ class Vehicle:
         #                    self.kinematics(k4_state, control, dt))
         # dstate = (k1 + 2*k2_dstate + 2*k3_dstate + k4_dstate)/6
         state_next = self.update(state, dstate, dt)
+        d = state_next[int(S.d)]
+        state_next[int(S.dist)] = (state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2
         return casadi.vertcat(*state_next)

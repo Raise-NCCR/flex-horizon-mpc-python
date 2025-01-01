@@ -24,9 +24,10 @@ class VehicleMPC:
         s = np.zeros(self.nx)
         r = np.zeros(self.nu)
         
-        q[int(S.ax)]    = 0.3
-        q[int(S.ay)]    = 0.3
-        q[int(S.xJerk)] = 0.4
+        # q[int(S.ax)]    = 0.3
+        # q[int(S.ay)]    = 0.3
+        # q[int(S.xJerk)] = 0.4
+        q[int(S.dist)] = 1
 
         # s[int(S.x)]     = 1.0
         # s[int(S.y)]     = 1.0
@@ -113,7 +114,7 @@ class VehicleMPC:
         return F
 
     def stage_cost(self, x, u):
-        return casadi.dot(self.Q@x,x)
+        return casadi.dot(self.Q@x,x)+casadi.dot(self.R@u, u)
     
     def terminal_cost(self, x):
         diff = x - self.ref
@@ -143,8 +144,8 @@ class VehicleMPC:
     def compute_optimal_control(self,x_init,x0):
         x_init = x_init.full().ravel().tolist()
 
-        # dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
-        dt = np.ones(self.N)*1
+        dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
+        # dt = np.ones(self.N)*0.5
         
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N
