@@ -100,36 +100,53 @@ class Vehicle:
         yJerk   = yJerk*sDot
         dt      = sDot * ds/v
         return casadi.vertcat(vDot, aDot, betaDot, deltaDot, omegaDot, psiDot, thetaDot, xDot, yDot, distDot, ax, ay,xJerk, yJerk, dt) / sDot
+    
+
+    def update(self, state, dstate, dt):
+        state_next = state
+        state_next  = [
+            state_next[int(S.d)]    + dt,
+            state_next[int(S.v)]    + dstate[int(DS.vDot)]*dt, 
+            state_next[int(S.a)]    + dstate[int(DS.aDot)]*dt,
+            state_next[int(S.beta)] + dstate[int(DS.betaDot)]*dt,
+            state_next[int(S.delta)]+ dstate[int(DS.deltaDot)]*dt,
+            state_next[int(S.omega)]+ dstate[int(DS.omegaDot)]*dt,
+            state_next[int(S.psi)]  + dstate[int(DS.psiDot)]*dt,
+            state_next[int(S.theta)]+ dstate[int(DS.thetaDot)]*dt,
+            state_next[int(S.x)]    + dstate[int(DS.xDot)]*dt,
+            state_next[int(S.y)]    + dstate[int(DS.yDot)]*dt,
+            state_next[int(S.dist)] + dstate[int(DS.distDot)]*dt,
+            dstate[int(DS.betaDot)],
+            dstate[int(DS.omegaDot)],
+            dstate[int(DS.ax)],
+            dstate[int(DS.ay)],
+            dstate[int(DS.xJerk)],
+            dstate[int(DS.yJerk)],
+            state_next[int(S.t)]    + dstate[int(DS.dt)],
+        ]
+        # d = state_next[int(S.d)]
+        # state_next[int(S.dist)] = (state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2
+        return state_next
 
     # 状態更新関数
     def update_state(self, state, control, dt):
-        dd      = 10
-        
         state_next = state
 
-        ddt = dt/dd
-        for i in range(dd):
-            dstate      = casadi.if_else(state_next[int(S.v)]>5, self.dynamics(state_next, control, ddt), self.kinematics(state_next, control, ddt))
-            state_next  = [
-                            state_next[int(S.d)]    + ddt,
-                            state_next[int(S.v)]    + dstate[int(DS.vDot)]*ddt, 
-                            state_next[int(S.a)]    + dstate[int(DS.aDot)]*ddt,
-                            state_next[int(S.beta)] + dstate[int(DS.betaDot)]*ddt,
-                            state_next[int(S.delta)]+ dstate[int(DS.deltaDot)]*ddt,
-                            state_next[int(S.omega)]+ dstate[int(DS.omegaDot)]*ddt,
-                            state_next[int(S.psi)]  + dstate[int(DS.psiDot)]*ddt,
-                            state_next[int(S.theta)]+ dstate[int(DS.thetaDot)]*ddt,
-                            state_next[int(S.x)]    + dstate[int(DS.xDot)]*ddt,
-                            state_next[int(S.y)]    + dstate[int(DS.yDot)]*ddt,
-                            state_next[int(S.dist)] + dstate[int(DS.distDot)]*ddt,
-                            dstate[int(DS.betaDot)],
-                            dstate[int(DS.omegaDot)],
-                            dstate[int(DS.ax)],
-                            dstate[int(DS.ay)],
-                            dstate[int(DS.xJerk)],
-                            dstate[int(DS.yJerk)],
-                            state_next[int(S.t)]    + dstate[int(DS.dt)],
-                        ]
-        # d = state[int(S.d)]
-        # state[int(S.dist)] = (state[int(S.x)]-self.refX(d))**2+(state[int(S.y)]-self.refY(d))**2
+        
+        dstate      = casadi.if_else(state_next[int(S.v)]>5, self.dynamics(state_next, control, dt), self.kinematics(state_next, control, dt))
+        # k1 = dstate
+        # k2_state = self.update(state, k1, dt/2)
+        # k2_dstate = casadi.if_else(state_next[int(S.v)]>5, 
+        #                    self.dynamics(k2_state, control, dt),
+        #                    self.kinematics(k2_state, control, dt))
+        # k3_state = self.update(state, k2_dstate, dt/2)
+        # k3_dstate = casadi.if_else(state_next[int(S.v)]>5,
+        #                    self.dynamics(k3_state, control, dt),
+        #                    self.kinematics(k3_state, control, dt))
+        # k4_state = self.update(state, k3_dstate, dt)
+        # k4_dstate = casadi.if_else(state[int(S.v)]>5,
+        #                    self.dynamics(k4_state, control, dt),
+        #                    self.kinematics(k4_state, control, dt))
+        # dstate = (k1 + 2*k2_dstate + 2*k3_dstate + k4_dstate)/6
+        state_next = self.update(state, dstate, dt)
         return casadi.vertcat(*state_next)

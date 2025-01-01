@@ -8,7 +8,7 @@ from plotResult import plotReuslt
 
 
 # Closed-loop シミュレーション
-refFile = "csv/disCur_path.csv"
+refFile = "csv/genPath.csv"
 
 df      = pd.read_csv(refFile)
 zhouDist= df['Distance'].to_numpy()

@@ -28,9 +28,9 @@ class VehicleMPC:
         q[int(S.ay)]    = 0.3
         q[int(S.xJerk)] = 0.4
 
-        s[int(S.x)]     = 1.0
-        s[int(S.y)]     = 1.0
-        s[int(S.v)]     = 1.0
+        # s[int(S.x)]     = 1.0
+        # s[int(S.y)]     = 1.0
+        # s[int(S.v)]     = 1.0
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
@@ -61,8 +61,8 @@ class VehicleMPC:
         self.betamin    = -10*pi/180.0
         self.deltamax   = 40*pi/180.0
         self.deltamin   = -40*pi/180.0
-        self.distmax    = 0.1**2
-        self.distmin    = -0.1**2
+        self.distmax    = 0.65
+        self.distmin    = -0.65
         self.xJerkmax   = 1
         self.xJerkmin   = -1
 
@@ -87,8 +87,8 @@ class VehicleMPC:
 
         self.jerkmax    = 1
         self.jerkmin    = -1
-        self.deltamax   = 12*pi/180.0
-        self.deltamin   = -12*pi/180.0  
+        self.deltamax   = 30*pi/180.0
+        self.deltamin   = -30*pi/180.0  
         
         self.u_ub = [self.jerkmax, self.deltamax]
         self.u_lb = [self.jerkmin, self.deltamin]
@@ -143,19 +143,19 @@ class VehicleMPC:
     def compute_optimal_control(self,x_init,x0):
         x_init = x_init.full().ravel().tolist()
 
-        dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
+        # dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
+        dt = np.ones(self.N)*1
         
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N
         lbg = [0]*self.nx*self.N 
         ubg = [0]*self.nx*self.N 
-
+        
         res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0, p=dt)
         hfnc    = self.S.get_function('nlp_hess_l')
-        print(hfnc)
         offset  = self.nx*(self.N+1)
         
-        x0      = res["x"]
-        u_opt   = x0[offset:offset+self.nu]
-        return u_opt, x0
+        x      = res["x"]
+        u_opt   = x[offset:offset+self.nu]
+        return dt[0],u_opt, x
 

@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import casadi
 import time
+import matplotlib.pyplot as plt
 
 from vehicleMpc import VehicleMPC
 from vehicleEnum import S, U
@@ -9,14 +10,15 @@ from plotResult import plotReuslt
 
 
 # Closed-loop シミュレーション
-refFile = "csv/disCur.csv"
+# refFile = "csv/genPath.csv"
+refFile = "csv/genPath.csv"
 
 df      = pd.read_csv(refFile)
 zhouDist= df['Distance'].to_numpy()
 zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
 
-N = 15
+N = 10
 
 mpc = VehicleMPC(refFile, 15)
 
@@ -42,20 +44,44 @@ us      = []    # 入力
 t       = 0 
 times   = [t]   # 時間（経路上の距離）
 
-start = time.time()
+p_ts = []
+
+
 sim_len = zhouDist[-1]
 while t < sim_len:
-    u_opt,x0 = mpc.compute_optimal_control(x,x0)
-    x = x0[len(S):len(S)*2:]
-    t = x[int(S.d)]
-    xs.append(x)
-    xx.append(x0)
-    us.append(u_opt)
-    times.append(t)
-    print('s= ', t)
-    print('t: ',x[int(S.t)])
-    print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
-    print("------------------------")
+    start = time.process_time()
+    dt,u_opt,x0 = mpc.compute_optimal_control(x,x0)
+    end = time.process_time()
+
+    p_ts.append(end-start)
+    ddt = int(dt/1)
+    print("dt: ",dt)
+    for i in range(ddt):
+        x = F(x=x,u=u_opt,p=1)["x_next"]
+        xs.append(x)
+        xx.append(x0)
+        us.append(u_opt)
+        t = x[int(S.d)]
+        times.append(t)
+        print('s= ', x[int(S.d)])
+        print('t: ',x[int(S.t)])
+        print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
+        print("v: ", x[int(S.v)])
+        print("------------------------")
+    dt = dt - ddt
+    if (dt != 0):
+        x = F(x=x,u=u_opt,p=dt)["x_next"]
+        # x = x0[len(S):len(S)*2:]
+        t = x[int(S.d)]
+        xs.append(x)
+        xx.append(x0)
+        us.append(u_opt)
+        times.append(t)
+        print('s= ', x[int(S.d)])
+        print('t: ',x[int(S.t)])
+        print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
+        print("v: ", x[int(S.v)])
+        print("------------------------")
 
     # print('s= ', t)
     # print('t: ',x[int(S.t)])
@@ -67,13 +93,21 @@ while t < sim_len:
     # print("dist: ",x[int(S.dist)])
     # print("beta:    ",x[int(S.beta)])
     # print("------------------------")
-end = time.time()
+p_ts.append(0)
 
-print('time', end-start)
+# print('time', end-start)
 print('s= ', t)
 print('t: ',x[int(S.t)])
 print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
 print("------------------------")
+
+# xsD     = list(row[int(S.d)].full()[0][0] for row in xs)
+# plt.figure()
+# plt.plot(xsD, p_ts, '-')
+# plt.xlabel('t')
+# plt.ylabel('jerk')
+# plt.grid()
+# plt.show()
 
 np.save('result/xs.npy', xx)
 np.save('result/xx.npy', xx)

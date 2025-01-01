@@ -44,11 +44,13 @@ class PeriodMPC:
         
         self.x_lb = [-float('inf')] * self.nx
 
-        dDotmin    = 1.0
+        dDotMax     = 5.0
+        dDotmin     = 1
         
         self.u_ub = [float('inf')] * self.nu
         self.u_lb = [-float('inf')] * self.nu
 
+        self.u_ub[int(U.dDot)] = dDotMax
         self.u_lb[int(U.dDot)] = dDotmin
 
     def make_F(self):
@@ -65,21 +67,22 @@ class PeriodMPC:
         new_d = state[int(S.d)] + control[int(U.dDot)]
         ds = casadi.linspace(state[int(S.d)], new_d, n)
         cur = self.curDiff(ds)
-        mean_cur = casadi.cumsum(cur)/n
-        diff = cur - mean_cur
-        var = casadi.dot(diff,diff)/n
-        state_next = [new_d, var]
+        # mean_cur = casadi.cumsum(cur)/n
+        # diff = cur - mean_cur
+        # var = casadi.dot(diff,diff)/n
+        err = casadi.cumsum(casadi.dot(cur,cur)) * (control[int(U.dDot)]**2) # 誤差に関するペナルティをdt^2と曲率の2乗和の積で表現
+        state_next = [new_d, err]
         return casadi.vertcat(*state_next)
 
     def stage_cost(self, x, u):
         # cost = casadi.if_else(u[int(U.dDot)] == 0, 100, self.R/casadi.dot(u,u))
-        cost = 1/casadi.dot(u,u)
+        cost = x[int(S.var)]
         return cost
     
     def terminal_cost(self, x, x0):
         # diff = x - self.end
         diff = x - x0
-        cost = 1/casadi.dot(diff,diff)
+        cost = 100/casadi.dot(diff,diff)
         return cost
     
     def make_nlp(self):

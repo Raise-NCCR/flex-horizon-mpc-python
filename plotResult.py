@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from vehicleEnum import S, U
 
 # # シミュレーション結果をプロット
-def plotReuslt(xs, us, zhouX, zhouY, show):
+def plotReuslt(xs, us, refX, refY, show):
     xsD     = list(row[int(S.d)].full()[0][0] for row in xs)
     xsV     = list(row[int(S.v)].full()[0][0] for row in xs)
     xsA     = list(row[int(S.a)].full()[0][0] for row in xs)
@@ -48,10 +48,10 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
     plt.figure(num)
     plt.clf()
     plt.plot(xsX, xsY, '-')
-    plt.plot(zhouX, zhouY, '-')
+    plt.plot(refX, refY, '-')
     plt.xlabel('x')
     plt.ylabel('y')
-    plt.legend(['MPC','zhouPath'])
+    plt.legend(['MPC','RefPath'])
     plt.grid()
     plt.show()
     num += 1
@@ -173,7 +173,7 @@ def plotReuslt(xs, us, zhouX, zhouY, show):
         plt.clf()
         plt.plot(time[1::], usDelta, '-')
         plt.xlabel('t')
-        plt.ylabel('delta')
+        plt.ylabel('deltaDot')
         plt.grid()
         plt.show()
         num += 1
