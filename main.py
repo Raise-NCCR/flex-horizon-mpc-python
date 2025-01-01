@@ -18,7 +18,7 @@ zhouDist= df['Distance'].to_numpy()
 zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
 
-N = 30
+N = 10
 
 mpc = VehicleMPC(refFile, N)
 
@@ -68,6 +68,7 @@ while t < 350:
         print('t: ',x[int(S.t)])
         print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
         print("v: ", x[int(S.v)])
+        print("psi: ", x[int(S.psi)])
         print("dist: ", x[int(S.dist)])
         print("------------------------")
     dt = dt - (ddt-1)*step
@@ -83,6 +84,7 @@ while t < 350:
         print('t: ',x[int(S.t)])
         print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
         print("v: ", x[int(S.v)])
+        print("psi: ", x[int(S.psi)])
         print("dist: ", x[int(S.dist)])
         print("------------------------")
 

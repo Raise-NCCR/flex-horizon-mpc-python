@@ -22,7 +22,7 @@ class VehicleMPC:
         # 重み係数
         q = np.zeros(self.nx)
         s = np.zeros(self.nx)
-        r = np.zeros(self.nu)
+        r = np.ones(self.nu)*0.01
         
         # q[int(S.ax)]    = 0.3
         # q[int(S.ay)]    = 0.3

@@ -124,8 +124,15 @@ class Vehicle:
             dstate[int(DS.yJerk)],
             state_next[int(S.t)]    + dstate[int(DS.dt)],
         ]
-        # d = state_next[int(S.d)]
-        # state_next[int(S.dist)] = (state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2
+        d = state_next[int(S.d)]
+        next_d = d+1
+        refXdot = self.refX(next_d) - self.refX(d)
+        refYdot = self.refY(next_d) - self.refY(d)
+        diffX   = state_next[int(S.x)] - self.refX(d)
+        diffY   = state_next[int(S.y)] - self.refY(d)
+        is_pos = casadi.if_else(diffX*refYdot - diffY*refXdot < 0, -1, 1)
+        # is_pos = casadi.MX(1)
+        state_next[int(S.dist)] = is_pos * casadi.sqrt(casadi.mmax(casadi.vertcat(casadi.MX(1e-10),(state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2)))
         return state_next
 
     # 状態更新関数
@@ -149,6 +156,6 @@ class Vehicle:
         #                    self.kinematics(k4_state, control, dt))
         # dstate = (k1 + 2*k2_dstate + 2*k3_dstate + k4_dstate)/6
         state_next = self.update(state, dstate, dt)
-        d = state_next[int(S.d)]
-        state_next[int(S.dist)] = (state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2
+        # d = state_next[int(S.d)]
+        # state_next[int(S.dist)] = (state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2
         return casadi.vertcat(*state_next)
