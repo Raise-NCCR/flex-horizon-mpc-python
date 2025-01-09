@@ -17,7 +17,7 @@ y_data = df['y'].to_numpy()
 theta_data = df['psi'].to_numpy()
 theta_data = list(map(lambda theta: theta*180.0/pi, theta_data))
 
-df = pd.read_csv('csv/disCur.csv')
+df = pd.read_csv('csv/genPath.csv')
 zhouX = df['x'].to_numpy()
 zhouY = df['y'].to_numpy()
 

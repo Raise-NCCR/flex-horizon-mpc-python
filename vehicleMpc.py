@@ -145,7 +145,7 @@ class VehicleMPC:
         x_init = x_init.full().ravel().tolist()
 
         dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
-        # dt = np.ones(self.N)*0.5
+        # dt = np.ones(self.N)
         
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N
