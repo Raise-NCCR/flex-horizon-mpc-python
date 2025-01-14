@@ -141,20 +141,20 @@ class Vehicle:
 
         
         dstate      = casadi.if_else(state_next[int(S.v)]>5, self.dynamics(state_next, control, dt), self.kinematics(state_next, control, dt))
-        # k1 = dstate
-        # k2_state = self.update(state, k1, dt/2)
-        # k2_dstate = casadi.if_else(state_next[int(S.v)]>5, 
-        #                    self.dynamics(k2_state, control, dt),
-        #                    self.kinematics(k2_state, control, dt))
-        # k3_state = self.update(state, k2_dstate, dt/2)
-        # k3_dstate = casadi.if_else(state_next[int(S.v)]>5,
-        #                    self.dynamics(k3_state, control, dt),
-        #                    self.kinematics(k3_state, control, dt))
-        # k4_state = self.update(state, k3_dstate, dt)
-        # k4_dstate = casadi.if_else(state[int(S.v)]>5,
-        #                    self.dynamics(k4_state, control, dt),
-        #                    self.kinematics(k4_state, control, dt))
-        # dstate = (k1 + 2*k2_dstate + 2*k3_dstate + k4_dstate)/6
+        k1 = dstate
+        k2_state = self.update(state, k1, dt/2)
+        k2_dstate = casadi.if_else(state_next[int(S.v)]>5, 
+                           self.dynamics(k2_state, control, dt),
+                           self.kinematics(k2_state, control, dt))
+        k3_state = self.update(state, k2_dstate, dt/2)
+        k3_dstate = casadi.if_else(state_next[int(S.v)]>5,
+                           self.dynamics(k3_state, control, dt),
+                           self.kinematics(k3_state, control, dt))
+        k4_state = self.update(state, k3_dstate, dt)
+        k4_dstate = casadi.if_else(state[int(S.v)]>5,
+                           self.dynamics(k4_state, control, dt),
+                           self.kinematics(k4_state, control, dt))
+        dstate = (k1 + 2*k2_dstate + 2*k3_dstate + k4_dstate)/6
         state_next = self.update(state, dstate, dt)
         # d = state_next[int(S.d)]
         # state_next[int(S.dist)] = (state_next[int(S.x)]-self.refX(d))**2+(state_next[int(S.y)]-self.refY(d))**2

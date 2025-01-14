@@ -17,8 +17,9 @@ df      = pd.read_csv(refFile)
 zhouDist= df['Distance'].to_numpy()
 zhouX   = df['x'].to_numpy()
 zhouY   = df['y'].to_numpy()
+cur = df['Curvature'].to_numpy()
 
-N = 10
+N = 15
 sim = True
 
 if sim:
@@ -46,17 +47,16 @@ if sim:
     t       = 0 
     times   = [t]   # 時間（経路上の距離）
 
-    p_ts = []
+    p_ts = [0]
 
 
     sim_len = zhouDist[-1]
     start = time.process_time()
-    while t < 350:
+    while t < 350 and x[int(S.dist)] < 5 and -5 < x[int(S.dist)]:
         step_start = time.process_time()
         dt,u_opt,x0 = mpc.compute_optimal_control(x,x0)
         step_end = time.process_time()
 
-        p_ts.append(step_end-step_start)
         step = 1.0
         ddt = int(dt/step)
         print("dt: ",dt)
@@ -67,6 +67,7 @@ if sim:
             us.append(u_opt)
             t = x[int(S.d)]
             times.append(t)
+            p_ts.append(step_end-step_start)
             print('s= ', x[int(S.d)])
             print('t: ',x[int(S.t)])
             print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
@@ -83,6 +84,7 @@ if sim:
             xx.append(x0)
             us.append(u_opt)
             times.append(t)
+            p_ts.append(step_end-step_start)
             print('s= ', x[int(S.d)])
             print('t: ',x[int(S.t)])
             print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
@@ -101,7 +103,6 @@ if sim:
         # print("dist: ",x[int(S.dist)])
         # print("beta:    ",x[int(S.beta)])
         # print("------------------------")
-    p_ts.append(0)
     end = time.process_time()
 
     print('time', end-start)
@@ -114,16 +115,24 @@ if sim:
     # plt.figure()
     # plt.plot(xsD, p_ts, '-')
     # plt.xlabel('t')
-    # plt.ylabel('jerk')
+    # plt.ylabel('ds')
     # plt.grid()
     # plt.show()
 
+    # plt.figure()
+    # plt.plot(zhouDist, cur, '-')
+    # plt.xlabel('t')
+    # plt.ylabel('ds')
+    # plt.grid()
+    # plt.show()
+
+    np.save('result/ts.npy', p_ts)
     np.save('result/us.npy', us)
     np.save('result/xs.npy', xs)
     np.save('result/xx.npy', xx)
 
-np.load('result/us.npy')
-np.load('result/xs.npy')
-np.load('result/xx.npy')
-show = [False] * (len(S)+len(U))
+us = np.load('result/us.npy')
+xs = np.load('result/xs.npy')
+xx = np.load('result/xx.npy')
+show = [True] * (len(S)+len(U))
 plotReuslt(xs, us, zhouX, zhouY, show)

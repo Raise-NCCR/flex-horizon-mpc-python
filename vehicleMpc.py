@@ -22,16 +22,17 @@ class VehicleMPC:
         # 重み係数
         q = np.zeros(self.nx)
         s = np.zeros(self.nx)
-        r = np.ones(self.nu)*0.01
+        r = np.zeros(self.nu)
         
-        # q[int(S.ax)]    = 0.3
-        # q[int(S.ay)]    = 0.3
-        # q[int(S.xJerk)] = 0.4
-        q[int(S.dist)] = 1
+        q[int(S.ax)]    = 0.3*10
+        q[int(S.ay)]    = 0.3*10
+        q[int(S.xJerk)] = 0.4*10
+        # q[int(S.dist)] = 1
 
         # s[int(S.x)]     = 1.0
         # s[int(S.y)]     = 1.0
-        # s[int(S.v)]     = 1.0
+        # s[int(S.v)]     = -0.05
+        s[int(S.theta)] = 1.0
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
@@ -88,8 +89,8 @@ class VehicleMPC:
 
         self.jerkmax    = 1
         self.jerkmin    = -1
-        self.deltamax   = 30*pi/180.0
-        self.deltamin   = -30*pi/180.0  
+        self.deltamax   = 12*pi/180.0
+        self.deltamin   = -12*pi/180.0  
         
         self.u_ub = [self.jerkmax, self.deltamax]
         self.u_lb = [self.jerkmin, self.deltamin]
@@ -117,8 +118,7 @@ class VehicleMPC:
         return casadi.dot(self.Q@x,x)+casadi.dot(self.R@u, u)
     
     def terminal_cost(self, x):
-        diff = x - self.ref
-        cost = casadi.dot(self.S@diff,diff)
+        cost = casadi.dot(self.S@x,x)
         return cost
     
     def make_nlp(self):
@@ -145,7 +145,8 @@ class VehicleMPC:
         x_init = x_init.full().ravel().tolist()
 
         dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
-        # dt = np.ones(self.N)
+        # dt_one = np.ones(self.N)
+        # dt[1:] = dt_one[1:]
         
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N
@@ -159,4 +160,3 @@ class VehicleMPC:
         x      = res["x"]
         u_opt   = x[offset:offset+self.nu]
         return dt[0],u_opt, x
-

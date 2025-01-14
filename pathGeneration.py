@@ -7,17 +7,23 @@ def generate_path():
     x1 = np.arange(0, 99.9, 0.1)
     y1 = np.zeros_like(x1)
 
-    # 円弧の点群を生成
+    # 左折
     theta = np.linspace(-np.pi/2, 0, 101)  # 60度分の点を生成
     x2 = 30 * (-np.cos(-np.pi/2) + np.cos(theta)) + x1[-1]# x座標を100だけずらして接続
     y2 = 30 * (-np.sin(-np.pi/2) + np.sin(theta)) + y1[-1]
 
-    # 2. 左折
+    # 2. 直進
     y3 = np.arange(y2[-1], y2[-1]+100.1, 0.1)
     x3 = np.full_like(y3, x2[-1])
     print(len(x3), len(y3))
 
+    # 左折
     theta = np.linspace(0, np.pi/2, 101)  # 60度分の点を生成
+    x4 = 30 * (-np.cos(0) + np.cos(theta)) + x3[-1] # x座標を100だけずらして接続
+    y4 = 30 * np.sin(theta) + y3[-1]
+
+    # 右折
+    theta = np.linspace(0, -np.pi/2, 101)  # 60度分の点を生成
     x4 = 30 * (-np.cos(0) + np.cos(theta)) + x3[-1] # x座標を100だけずらして接続
     y4 = 30 * np.sin(theta) + y3[-1]
 

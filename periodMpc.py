@@ -17,11 +17,11 @@ class PeriodMPC:
         s = np.zeros(self.nx)
         r = np.zeros(self.nu)
         
-        # q[int(S.var)]   = 1
+        q[int(S.var)]   = 1000000
 
         s[int(S.d)]     = 1/1000
 
-        r[int(U.dDot)]  = 1/1000
+        # r[int(U.dDot)]  = 1/1000
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
@@ -76,7 +76,7 @@ class PeriodMPC:
 
     def stage_cost(self, x, u):
         # cost = casadi.if_else(u[int(U.dDot)] == 0, 100, self.R/casadi.dot(u,u))
-        cost = x[int(S.var)]
+        cost = casadi.sum1(self.Q@x)
         return cost
     
     def terminal_cost(self, x, x0):
