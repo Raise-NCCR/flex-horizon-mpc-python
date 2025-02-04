@@ -15,8 +15,10 @@ def plotReuslt(xs, us, refX, refY, show):
     xsDelta = list(row[int(S.delta)] for row in xs)
     xsOmega = list(row[int(S.omega)] for row in xs)
     xsPsi   = list(row[int(S.psi)] for row in xs)
+    xsTheta   = list(row[int(S.theta)] for row in xs)
     xsX     = list(row[int(S.x)] for row in xs)
     xsY     = list(row[int(S.y)] for row in xs)
+    xsDist     = list(row[int(S.dist)] for row in xs)
     xsAx    = list(row[int(S.ax)] for row in xs)
     xsAy    = list(row[int(S.ay)] for row in xs)
     xsXjerk = list(row[int(S.xJerk)] for row in xs)
@@ -37,8 +39,10 @@ def plotReuslt(xs, us, refX, refY, show):
     def_xsDelta = list(row[int(S.delta)] for row in xs)
     def_xsOmega = list(row[int(S.omega)] for row in xs)
     def_xsPsi   = list(row[int(S.psi)] for row in xs)
+    def_xsTheta   = list(row[int(S.theta)] for row in xs)
     def_xsX     = list(row[int(S.x)] for row in xs)
     def_xsY     = list(row[int(S.y)] for row in xs)
+    def_xsDist     = list(row[int(S.dist)] for row in xs)
     def_xsAx    = list(row[int(S.ax)] for row in xs)
     def_xsAy    = list(row[int(S.ay)] for row in xs)
     def_xsXjerk = list(row[int(S.xJerk)] for row in xs)
@@ -178,6 +182,19 @@ def plotReuslt(xs, us, refX, refY, show):
         plt.show()
         num += 1
 
+    # dist
+    if (show[int(S.dist)]):
+        plt.figure(num)
+        plt.clf()
+        plt.plot(time, xsDist, '-')
+        plt.plot(def_time, def_xsDist, '-')
+        plt.xlabel('t')
+        plt.ylabel('dist')
+        plt.legend(['flex','fixed'])
+        plt.grid()
+        plt.show()
+        num += 1
+
     # psi
     if (show[int(S.psi)]):
         plt.figure(num)
@@ -186,6 +203,19 @@ def plotReuslt(xs, us, refX, refY, show):
         plt.plot(def_time, def_xsPsi, '-')
         plt.xlabel('t')
         plt.ylabel('psi')
+        plt.legend(['flex','fixed'])
+        plt.grid()
+        plt.show()
+        num += 1
+
+    # theta
+    if (show[int(S.theta)]):
+        plt.figure(num)
+        plt.clf()
+        plt.plot(time, xsTheta, '-')
+        plt.plot(def_time, def_xsTheta, '-')
+        plt.xlabel('t')
+        plt.ylabel('theta')
         plt.legend(['flex','fixed'])
         plt.grid()
         plt.show()

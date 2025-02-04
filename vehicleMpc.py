@@ -2,6 +2,7 @@ from math import pi
 import numpy as np
 import pandas as pd
 import casadi
+from scipy import interpolate
 from matplotlib import pyplot as plt
 
 from vehicleEnum     import S, DS, U
@@ -22,17 +23,17 @@ class VehicleMPC:
         # 重み係数
         q = np.zeros(self.nx)
         s = np.zeros(self.nx)
-        r = np.zeros(self.nu)
+        r = np.ones(self.nu)
         
-        q[int(S.ax)]    = 0.3*10
-        q[int(S.ay)]    = 0.3*10
-        q[int(S.xJerk)] = 0.4*10
-        # q[int(S.dist)] = 1
+        q[int(S.theta)] = 1
+        q[int(S.vErr)] = 1
 
         # s[int(S.x)]     = 1.0
         # s[int(S.y)]     = 1.0
         # s[int(S.v)]     = -0.05
+        s[int(S.omega)] = 1.0
         s[int(S.theta)] = 1.0
+
         
         self.Q = casadi.diag(q)
         self.S = casadi.diag(s)
@@ -43,16 +44,18 @@ class VehicleMPC:
         y       = path['y'].to_numpy()
         distance= path['Distance'].to_numpy()
         cur     = path['Curvature'].to_numpy()
+        speed   = path['Speed'].to_numpy()
         cur_diff= np.diff(cur)
         
         self.curDiff= casadi.interpolant('interp', 'linear', [distance[:len(distance)-1:]], cur_diff)
         self.cur    = casadi.interpolant('interp', 'linear', [distance], cur)
         self.refX   = casadi.interpolant('interp', 'linear', [distance], x)
         self.refY   = casadi.interpolant('interp', 'linear', [distance], y)
+        self.speed  = casadi.interpolant('interp', 'linear', [distance], speed)
 
         self.dest   = distance[-1]
 
-        self.vehicle = Vehicle(self.refX,self.refY,self.cur)
+        self.vehicle = Vehicle(self.refX,self.refY,self.cur,self.speed)
 
         # 制約
         self.vmax       = 16.7
@@ -90,7 +93,8 @@ class VehicleMPC:
         self.jerkmax    = 1
         self.jerkmin    = -1
         self.deltamax   = 12*pi/180.0
-        self.deltamin   = -12*pi/180.0  
+        self.deltamin   = -12*pi/180.0 
+        
         
         self.u_ub = [self.jerkmax, self.deltamax]
         self.u_lb = [self.jerkmin, self.deltamin]
@@ -144,16 +148,21 @@ class VehicleMPC:
     def compute_optimal_control(self,x_init,x0):
         x_init = x_init.full().ravel().tolist()
 
-        dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
+        # dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
+        # dt = dt.full().ravel().tolist()
         # dt_one = np.ones(self.N)
         # dt[1:] = dt_one[1:]
-        
+
+        dt = np.ones(self.N)
+
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N
-        lbg = [0]*self.nx*self.N 
-        ubg = [0]*self.nx*self.N 
+        lbg = ([0.0]*self.nx)*self.N 
+        ubg = ([0.0]*self.nx)*self.N
+
+        p = dt
         
-        res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0, p=dt)
+        res     = self.S(lbx=lbx, ubx=ubx, lbg=lbg, ubg=ubg, x0=x0, p=p)
         hfnc    = self.S.get_function('nlp_hess_l')
         offset  = self.nx*(self.N+1)
         

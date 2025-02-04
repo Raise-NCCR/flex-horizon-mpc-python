@@ -12,6 +12,7 @@ class S(IntEnum):
     x       = auto()
     y       = auto()
     dist    = auto()
+    # distInt = auto()
     ax      = auto()
     ay      = auto()
     betaDot = auto()
@@ -19,6 +20,7 @@ class S(IntEnum):
     xJerk   = auto()
     yJerk   = auto()
     t       = auto()
+    vErr    = auto()
 
 class DS(IntEnum):
     vDot    = 0

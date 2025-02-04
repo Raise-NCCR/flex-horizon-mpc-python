@@ -14,10 +14,11 @@ from plotResult import plotReuslt
 refFile = "csv/genPath.csv"
 
 df      = pd.read_csv(refFile)
-zhouDist= df['Distance'].to_numpy()
-zhouX   = df['x'].to_numpy()
-zhouY   = df['y'].to_numpy()
+refDist= df['Distance'].to_numpy()
+refX   = df['x'].to_numpy()
+refY   = df['y'].to_numpy()
 cur = df['Curvature'].to_numpy()
+speed = df['Speed'].to_numpy()
 
 N = 15
 sim = True
@@ -26,8 +27,8 @@ if sim:
     mpc = VehicleMPC(refFile, N)
 
     ref             = np.zeros(mpc.nx)
-    ref[int(S.x)]   = zhouX[-1]
-    ref[int(S.y)]   = zhouY[-1]
+    ref[int(S.x)]   = refX[-1]
+    ref[int(S.y)]   = refY[-1]
     mpc.set_ref(ref)
 
     F = mpc.make_F()
@@ -50,7 +51,7 @@ if sim:
     p_ts = [0]
 
 
-    sim_len = zhouDist[-1]
+    sim_len = refDist[-1]
     start = time.process_time()
     while t < 350 and x[int(S.dist)] < 5 and -5 < x[int(S.dist)]:
         step_start = time.process_time()
@@ -72,7 +73,7 @@ if sim:
             print('t: ',x[int(S.t)])
             print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
             print("v: ", x[int(S.v)])
-            print("psi: ", x[int(S.psi)])
+            print("theta: ", x[int(S.theta)])
             print("dist: ", x[int(S.dist)])
             print("------------------------")
         dt = dt - (ddt-1)*step
@@ -89,7 +90,7 @@ if sim:
             print('t: ',x[int(S.t)])
             print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
             print("v: ", x[int(S.v)])
-            print("psi: ", x[int(S.psi)])
+            print("theta: ", x[int(S.theta)])
             print("dist: ", x[int(S.dist)])
             print("------------------------")
 
@@ -120,7 +121,7 @@ if sim:
     # plt.show()
 
     # plt.figure()
-    # plt.plot(zhouDist, cur, '-')
+    # plt.plot(refDist, cur, '-')
     # plt.xlabel('t')
     # plt.ylabel('ds')
     # plt.grid()
@@ -135,4 +136,4 @@ us = np.load('result/us.npy')
 xs = np.load('result/xs.npy')
 xx = np.load('result/xx.npy')
 show = [True] * (len(S)+len(U))
-plotReuslt(xs, us, zhouX, zhouY, show)
+plotReuslt(xs, us, refX, refY, show)

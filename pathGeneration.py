@@ -15,17 +15,16 @@ def generate_path():
     # 2. 直進
     y3 = np.arange(y2[-1], y2[-1]+100.1, 0.1)
     x3 = np.full_like(y3, x2[-1])
-    print(len(x3), len(y3))
-
+    
     # 左折
     theta = np.linspace(0, np.pi/2, 101)  # 60度分の点を生成
     x4 = 30 * (-np.cos(0) + np.cos(theta)) + x3[-1] # x座標を100だけずらして接続
     y4 = 30 * np.sin(theta) + y3[-1]
 
     # 右折
-    theta = np.linspace(0, -np.pi/2, 101)  # 60度分の点を生成
-    x4 = 30 * (-np.cos(0) + np.cos(theta)) + x3[-1] # x座標を100だけずらして接続
-    y4 = 30 * np.sin(theta) + y3[-1]
+    # theta = np.linspace(0, -np.pi/2, 101)  # 60度分の点を生成
+    # x4 = 30 * (-np.cos(0) + np.cos(theta)) + x3[-1] # x座標を100だけずらして接続
+    # y4 = 30 * np.sin(theta) + y3[-1]
 
     # 3. 100メートル直進
     x5 = np.arange(x4[-1], x4[-1]-100.1, -0.1)
@@ -60,6 +59,19 @@ ddy = np.gradient(dy)
 # 曲率の計算
 curvature = np.abs(dx * ddy - dy * ddx) / (dx**2 + dy**2)**1.5
 
+speed = np.zeros_like(curvature)
+for i, c in enumerate(curvature):
+    if c > 1/30:
+        speed[i] = 20/3.6
+    elif c > 1/65:
+        speed[i] = 30/3.6
+    elif c > 1/100:
+        speed[i] = 40/3.6
+    elif c > 1/150:
+        speed[i] = 50/3.6
+    else:
+        speed[i] = 60/3.6
+
 
 # 距離を計算
 distances = np.sqrt(np.diff(x)**2 + np.diff(y)**2)
@@ -71,18 +83,19 @@ output_df = pd.DataFrame({
     'Distance': total_distances,
     'x': x,
     'y': y,
-    'Curvature': curvature
+    'Curvature': curvature,
+    'Speed': speed,
 })
 
 # 結果を新しいCSVファイルに保存
 output_df.to_csv('csv/genPath.csv', index=False)
 
 # グラフで経路を可視化
-# plt.figure(figsize=(10, 10))
-# plt.plot(x, y, 'b-')
-# plt.title('自動車の運動シミュレーション経路')
-# plt.xlabel('X座標 (m)')
-# plt.ylabel('Y座標 (m)')
-# plt.grid(True)
-# plt.axis('equal')
-# plt.show()
+plt.figure(figsize=(10, 10))
+plt.plot(x, y, 'b-')
+plt.title('自動車の運動シミュレーション経路')
+plt.xlabel('X座標 (m)')
+plt.ylabel('Y座標 (m)')
+plt.grid(True)
+plt.axis('equal')
+plt.show()

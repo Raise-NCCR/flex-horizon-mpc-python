@@ -4,7 +4,7 @@ import numpy as np
 from vehicleEnum import S, DS, U
 
 class Vehicle:
-    def __init__(self, refX, refY, cur):
+    def __init__(self, refX, refY, cur, speed):
         Mass        = 1100.0    # 車両重量
         YawMoment   = 1600.0    # ヨー慣性モーメント
         Cp_f        = 32000.0   # 前輪コーナリングパワー
@@ -24,6 +24,7 @@ class Vehicle:
         self.refX= refX    
         self.refY= refY
         self.cur = cur  # 曲率データ
+        self.speed = speed
 
     def kinematics(self, state, control, ds):
         d       = state[int(S.d)]
@@ -48,7 +49,7 @@ class Vehicle:
         vDot    = a
         aDot    = jerk
         betaDot = casadi.atan(casadi.tan(delta)/2) - beta
-        deltaDot   = control[int(U.deltaDot)]
+        deltaDot   = (control[int(U.deltaDot)] - delta)/3
         omegaDot= casadi.sin(beta)*v/self.car_lf - omega
         psiDot  = omega
         thetaDot= omega - sDot*cur
@@ -123,6 +124,7 @@ class Vehicle:
             dstate[int(DS.xJerk)],
             dstate[int(DS.yJerk)],
             state_next[int(S.t)]    + dstate[int(DS.dt)],
+            self.speed(state_next[int(S.d)]) - state_next[int(S.v)],
         ]
         d = state_next[int(S.d)]
         next_d = d+1
