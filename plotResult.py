@@ -7,7 +7,7 @@ from vehicleEnum import S, U
 from rideComfort import rideComfort
 
 # # シミュレーション結果をプロット
-def plotReuslt(xs, us, refX, refY, show):
+def plotResult(xs, us, refX, refY, show):
     xsD     = list(row[int(S.d)] for row in xs)
     xsV     = list(row[int(S.v)] for row in xs)
     xsA     = list(row[int(S.a)] for row in xs)
@@ -29,8 +29,8 @@ def plotReuslt(xs, us, refX, refY, show):
 
     xsComfort = rideComfort(xs)
 
-    xs = np.load('result/default/xs.npy')
-    us = np.load('result/default/us.npy')
+    xs = np.load('result/default2/xs.npy')
+    us = np.load('result/default2/us.npy')
 
     def_xsD     = list(row[int(S.d)] for row in xs)
     def_xsV     = list(row[int(S.v)] for row in xs)
@@ -54,7 +54,7 @@ def plotReuslt(xs, us, refX, refY, show):
     def_xsComfort = rideComfort(xs)
     
     ts = np.load('result/ts.npy')
-    def_ts = np.load('result/default/ts.npy')
+    def_ts = np.load('result/default2/ts.npy')
 
     time = xsD
     def_time = def_xsD
@@ -94,6 +94,7 @@ def plotReuslt(xs, us, refX, refY, show):
     plt.show()
     num += 1
 
+    
     plt.figure(num)
     plt.clf()
     plt.plot(time, ts, '-')
@@ -105,17 +106,17 @@ def plotReuslt(xs, us, refX, refY, show):
     plt.show()
     num += 1
 
-    
-    plt.figure(num)
-    plt.clf()
-    plt.plot(time, xsComfort, '-')
-    plt.plot(def_time, def_xsComfort, '-')
-    plt.xlabel('t')
-    plt.ylabel('ride comfort')
-    plt.legend(['flex','fixed'])
-    plt.grid()
-    plt.show()
-    num += 1
+    # # ride comfort
+    # plt.figure(num)
+    # plt.clf()
+    # plt.plot(time, xsComfort, '-')
+    # plt.plot(def_time, def_xsComfort, '-')
+    # plt.xlabel('t')
+    # plt.ylabel('ride comfort')
+    # plt.legend(['flex','fixed'])
+    # plt.grid()
+    # plt.show()
+    # num += 1
 
     # v
     if (show[int(S.v)]):
@@ -221,57 +222,57 @@ def plotReuslt(xs, us, refX, refY, show):
         plt.show()
         num += 1
 
-    # ax
-    if (show[int(S.ax)]):
-        plt.figure(num)
-        plt.clf()
-        plt.plot(time, xsAx, '-')
-        plt.plot(def_time, def_xsAx, '-')
-        plt.xlabel('t')
-        plt.ylabel('ax')
-        plt.legend(['flex','fixed'])
-        plt.grid()
-        plt.show()
-        num += 1
+    # # ax
+    # if (show[int(S.ax)]):
+    #     plt.figure(num)
+    #     plt.clf()
+    #     plt.plot(time, xsAx, '-')
+    #     plt.plot(def_time, def_xsAx, '-')
+    #     plt.xlabel('t')
+    #     plt.ylabel('ax')
+    #     plt.legend(['flex','fixed'])
+    #     plt.grid()
+    #     plt.show()
+    #     num += 1
 
-    # ay
-    if (show[int(S.ay)]):
-        plt.figure(num)
-        plt.clf()
-        plt.plot(time, xsAy, '-')
-        plt.plot(def_time, def_xsAy, '-')
-        plt.xlabel('t')
-        plt.ylabel('ay')
-        plt.legend(['flex','fixed'])
-        plt.grid()
-        plt.show()
-        num += 1
+    # # ay
+    # if (show[int(S.ay)]):
+    #     plt.figure(num)
+    #     plt.clf()
+    #     plt.plot(time, xsAy, '-')
+    #     plt.plot(def_time, def_xsAy, '-')
+    #     plt.xlabel('t')
+    #     plt.ylabel('ay')
+    #     plt.legend(['flex','fixed'])
+    #     plt.grid()
+    #     plt.show()
+    #     num += 1
 
-    # xJerk
-    if (show[int(S.xJerk)]):
-        plt.figure(num)
-        plt.clf()
-        plt.plot(time, xsXjerk, '-')
-        plt.plot(def_time, def_xsXjerk, '-')
-        plt.xlabel('t')
-        plt.ylabel('xJerk')
-        plt.legend(['flex','fixed'])
-        plt.grid()
-        plt.show()
-        num += 1
+    # # xJerk
+    # if (show[int(S.xJerk)]):
+    #     plt.figure(num)
+    #     plt.clf()
+    #     plt.plot(time, xsXjerk, '-')
+    #     plt.plot(def_time, def_xsXjerk, '-')
+    #     plt.xlabel('t')
+    #     plt.ylabel('xJerk')
+    #     plt.legend(['flex','fixed'])
+    #     plt.grid()
+    #     plt.show()
+    #     num += 1
 
-    # yJerk
-    if (show[int(S.yJerk)]):
-        plt.figure(num)
-        plt.clf()
-        plt.plot(time, xsYjerk, '-')
-        plt.plot(def_time, def_xsYjerk, '-')
-        plt.xlabel('t')
-        plt.ylabel('yJerk')
-        plt.legend(['flex','fixed'])
-        plt.grid()
-        plt.show()
-        num += 1
+    # # yJerk
+    # if (show[int(S.yJerk)]):
+    #     plt.figure(num)
+    #     plt.clf()
+    #     plt.plot(time, xsYjerk, '-')
+    #     plt.plot(def_time, def_xsYjerk, '-')
+    #     plt.xlabel('t')
+    #     plt.ylabel('yJerk')
+    #     plt.legend(['flex','fixed'])
+    #     plt.grid()
+    #     plt.show()
+    #     num += 1
 
     # jerk
     if (show[len(S)+int(U.jerk)]):

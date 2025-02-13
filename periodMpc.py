@@ -6,7 +6,7 @@ import casadi
 from periodEnum     import S, U
 
 class PeriodMPC:
-    def __init__(self, N, curDiff, dest):
+    def __init__(self, N, cur, dest):
         # 問題設定
         self.N      = N         # ホライゾン離散化グリッド数
         self.nx     = len(S)    # 状態空間の次元
@@ -31,7 +31,7 @@ class PeriodMPC:
         end[int(S.d)] = dest + 20
         self.end = end
 
-        self.curDiff    = curDiff
+        self.cur    = cur
 
         # 制約
         varmax      = 0.006
@@ -44,7 +44,7 @@ class PeriodMPC:
         
         self.x_lb = [-float('inf')] * self.nx
 
-        dDotMax     = 5.0
+        dDotMax     = 3.0
         dDotmin     = 1.0
         
         self.u_ub = [float('inf')] * self.nu
@@ -66,7 +66,7 @@ class PeriodMPC:
         n = 10
         new_d = state[int(S.d)] + control[int(U.dDot)]
         ds = casadi.linspace(state[int(S.d)], new_d, n)
-        cur = self.curDiff(ds)
+        cur = self.cur(ds)
         # mean_cur = casadi.cumsum(cur)/n
         # diff = cur - mean_cur
         # var = casadi.dot(diff,diff)/n

@@ -11,6 +11,7 @@ class Vehicle:
         Cp_r        = 32000.0   # 後輪コーナリングパワー
         self.car_lf = 1.25      # 重心から前輪軸までの距離
         car_lr      = 1.25      # 重心から後輪軸までの距離
+        self.tau    = 5
 
 
         self.a1 = -(Cp_f+Cp_r)/Mass
@@ -46,10 +47,10 @@ class Vehicle:
         dDotTmp = v*casadi.cos(theta) - v*beta*casadi.sin(theta)
 
         sDot    = casadi.if_else(rho==np.inf, dDotTmp, rho*dDotTmp/(rho-dist))
-        vDot    = a
-        aDot    = jerk
+        vDot    = jerk
+        aDot    = (jerk - a)/self.tau
         betaDot = casadi.atan(casadi.tan(delta)/2) - beta
-        deltaDot   = (control[int(U.deltaDot)] - delta)/3
+        deltaDot   = (control[int(U.deltaDot)] - delta)/self.tau
         omegaDot= casadi.sin(beta)*v/self.car_lf - omega
         psiDot  = omega
         thetaDot= omega - sDot*cur
@@ -81,10 +82,10 @@ class Vehicle:
         sDotTmp = v*casadi.cos(theta) - v*beta*casadi.sin(theta)        
         sDot    = casadi.if_else(rho==np.inf, sDotTmp, rho*sDotTmp/(rho+dist))
         
-        vDot    = a
-        aDot    = jerk
+        vDot    = jerk
+        aDot    = (jerk - a)/self.tau
         betaDot = self.a1*beta/v + self.a2*omega/((v ** 2)) - omega + self.a3*delta/v + self.a4*a*beta/v
-        deltaDot= control[int(U.deltaDot)]
+        deltaDot= (control[int(U.deltaDot)] - delta)/self.tau
         omegaDot= self.b1*beta + self.b2*omega/v + self.b3*delta
         psiDot  = omega
         thetaDot= omega - sDot*cur

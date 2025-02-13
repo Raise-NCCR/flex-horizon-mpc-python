@@ -7,11 +7,9 @@ from matplotlib import pyplot as plt
 
 from vehicleEnum     import S, DS, U
 from vehicle    import Vehicle
-from periodMpc  import PeriodMPC
-from execPeriodMpc import execPeriodMpc
 
 class VehicleMPC:
-    def __init__(self, refFile, N):
+    def __init__(self, refFile, N, speed):
         # 問題設定
         self.dt     = 1.5       # 離散化ステップ
         self.ratio  = 2
@@ -25,14 +23,17 @@ class VehicleMPC:
         s = np.zeros(self.nx)
         r = np.ones(self.nu)
         
-        q[int(S.theta)] = 1
+        q[int(S.theta)] = 100000
         q[int(S.vErr)] = 1
 
         # s[int(S.x)]     = 1.0
         # s[int(S.y)]     = 1.0
         # s[int(S.v)]     = -0.05
         s[int(S.omega)] = 1.0
-        s[int(S.theta)] = 1.0
+        s[int(S.theta)] = 100000
+
+        self.QvErrNeg = 1000000
+        self.QvErrPos = 0
 
         
         self.Q = casadi.diag(q)
@@ -44,16 +45,14 @@ class VehicleMPC:
         y       = path['y'].to_numpy()
         distance= path['Distance'].to_numpy()
         cur     = path['Curvature'].to_numpy()
-        speed   = path['Speed'].to_numpy()
         cur_diff= np.diff(cur)
         
         self.curDiff= casadi.interpolant('interp', 'linear', [distance[:len(distance)-1:]], cur_diff)
         self.cur    = casadi.interpolant('interp', 'linear', [distance], cur)
         self.refX   = casadi.interpolant('interp', 'linear', [distance], x)
         self.refY   = casadi.interpolant('interp', 'linear', [distance], y)
-        self.speed  = casadi.interpolant('interp', 'linear', [distance], speed)
-
         self.dest   = distance[-1]
+        self.speed = speed
 
         self.vehicle = Vehicle(self.refX,self.refY,self.cur,self.speed)
 
@@ -61,15 +60,17 @@ class VehicleMPC:
         self.vmax       = 16.7
         self.vmin       = 0
         self.amax       = 2
-        self.amin       = -1
+        self.amin       = -2
         self.betamax    = 10*pi/180.0
         self.betamin    = -10*pi/180.0
         self.deltamax   = 40*pi/180.0
         self.deltamin   = -40*pi/180.0
-        self.distmax    = 0.65
-        self.distmin    = -0.65
+        self.distmax    = 0.32
+        self.distmin    = -0.32
         self.xJerkmax   = 1
         self.xJerkmin   = -1
+        self.vErrmax    = 1
+        self.vErrmin    = -1
 
         self.x_ub = [float('inf')] * self.nx
         
@@ -79,6 +80,7 @@ class VehicleMPC:
         self.x_ub[int(S.delta)] = self.deltamax
         self.x_ub[int(S.dist)]  = self.distmax
         self.x_ub[int(S.xJerk)] = self.xJerkmax
+        # self.x_ub[int(S.vErr)] = self.vErrmax
         
         self.x_lb = [-float('inf')] * self.nx
         
@@ -88,12 +90,13 @@ class VehicleMPC:
         self.x_lb[int(S.delta)]  = self.deltamin
         self.x_lb[int(S.dist)]  = self.distmin
         self.x_lb[int(S.xJerk)] = self.xJerkmin
-
-
-        self.jerkmax    = 1
-        self.jerkmin    = -1
-        self.deltamax   = 12*pi/180.0
-        self.deltamin   = -12*pi/180.0 
+        # self.x_lb[int(S.vErr)] = self.vErrmin
+        
+        
+        self.jerkmax    = 2
+        self.jerkmin    = -2
+        self.deltamax   = 40*pi/180.0
+        self.deltamin   = -40*pi/180.0 
         
         
         self.u_ub = [self.jerkmax, self.deltamax]
@@ -101,6 +104,9 @@ class VehicleMPC:
 
     def set_ref(self, ref):
         self.ref = ref
+
+    def set_speed_ref(self, speed):
+        self.speed = speed
 
     def set_dt(self, dt):
         self.dt = dt
@@ -115,10 +121,11 @@ class VehicleMPC:
         
         state_next = self.vehicle.update_state(state, control, dt)
         
-        F = casadi.Function("F", [state, control, dt],[state_next],["x","u","p"],["x_next"])
+        F = casadi.Function("F", [state, control, dt],[state_next],["x","u","dt"],["x_next"])
         return F
 
     def stage_cost(self, x, u):
+        # QvErr = casadi.if_else(x[int(S.vErr)] < 0, self.QvErrNeg, self.QvErrPos)
         return casadi.dot(self.Q@x,x)+casadi.dot(self.R@u, u)
     
     def terminal_cost(self, x):
@@ -136,7 +143,7 @@ class VehicleMPC:
         J = 0
         for k in range(self.N):
             J += self.stage_cost(X[k],U[k])
-            eq = X[k+1] - F(x=X[k],u=U[k],p=P[k])["x_next"]
+            eq = X[k+1] - F(x=X[k],u=U[k],dt=P[k])["x_next"]
             G.append(eq)
         J += self.terminal_cost(X[self.N])
 
@@ -145,15 +152,14 @@ class VehicleMPC:
         self.S  = casadi.nlpsol("S","ipopt",nlp,option)
         return
 
-    def compute_optimal_control(self,x_init,x0):
+    def compute_optimal_control(self,x_init,x0,dt):
         x_init = x_init.full().ravel().tolist()
 
-        # dt = execPeriodMpc(self.curDiff, x0, self.N, self.dest)
-        # dt = dt.full().ravel().tolist()
+        
         # dt_one = np.ones(self.N)
         # dt[1:] = dt_one[1:]
 
-        dt = np.ones(self.N)
+        # dt = np.ones(self.N)
 
         lbx = x_init + self.x_lb*self.N + self.u_lb*self.N 
         ubx = x_init + self.x_ub*self.N + self.u_ub*self.N

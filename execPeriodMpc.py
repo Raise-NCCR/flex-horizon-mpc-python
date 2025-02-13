@@ -6,7 +6,7 @@ from vehicleEnum import S as VS
 
 from periodMpc import PeriodMPC
 from periodEnum import S, U
-from plotResult import plotReuslt
+from plotResult import plotResult
 
 
 # Closed-loop シミュレーション
