@@ -13,20 +13,7 @@ from speedMpc import SpeedMPC
 
 # Closed-loop シミュレーション
 # refFile = "csv/genPath.csv"
-refFile = "csv/genPath.csv"
-
-df      = pd.read_csv(refFile)
-refDist= df['Distance'].to_numpy()
-refX   = df['x'].to_numpy()
-refY   = df['y'].to_numpy()
-cur = df['Curvature'].to_numpy()
-speed = df['Speed'].to_numpy()
-
-
-N = 100
-sim = True
-
-if sim:
+def execSpeedMPC(refFile, N):
     speedMPC = SpeedMPC(refFile, N)
 
     F = speedMPC.make_F()
@@ -49,28 +36,8 @@ if sim:
     p_ts = [0]
 
 
-    sim_len = refDist[-1]
-    start = time.process_time()
-    while x[int(S.d)] < 1000:
-        dt = np.ones(speedMPC.N)
-        u, vRef, x0 = speedMPC.compute_optimal_control(x,x0,dt)
-        x = F(x=x, u=u, p=dt[0])['x_next']
-        # print('d: ', x[int(S.d)])
-        # print('v: ', x[int(S.v)])
-        # print('a: ', x[int(S.a)])
-        # print('u: ', u)
-        xs.append(x)
-        us.append(u)
+    dt = np.ones(speedMPC.N)
+    u, vRef, x0 = speedMPC.compute_optimal_control(x,x0,dt)
+    x = F(x=x, u=u, p=dt[0])['x_next']
 
-
-        
-    np.save('result/ts.npy', p_ts)
-    np.save('result/us.npy', us)
-    np.save('result/xs.npy', xs)
-    np.save('result/xx.npy', xx)
-
-us = np.load('result/us.npy')
-xs = np.load('result/xs.npy')
-xx = np.load('result/xx.npy')
-show = [True] * (len(S)+len(U))
-plotSpeedResult(xs, us, refDist, speed, show)
+    

@@ -25,12 +25,13 @@ class VehicleMPC:
         
         q[int(S.theta)] = 100000
         q[int(S.vErr)] = 1
-
+        
         # s[int(S.x)]     = 1.0
         # s[int(S.y)]     = 1.0
         # s[int(S.v)]     = -0.05
         s[int(S.omega)] = 1.0
         s[int(S.theta)] = 100000
+        # s[int(S.dist)] = 1
 
         self.QvErrNeg = 1000000
         self.QvErrPos = 0
@@ -65,12 +66,12 @@ class VehicleMPC:
         self.betamin    = -10*pi/180.0
         self.deltamax   = 40*pi/180.0
         self.deltamin   = -40*pi/180.0
-        self.distmax    = 0.32
-        self.distmin    = -0.32
+        self.distmax    = 0.65
+        self.distmin    = -0.65
         self.xJerkmax   = 1
         self.xJerkmin   = -1
-        self.vErrmax    = 1
-        self.vErrmin    = -1
+        self.vErrmax    = 0.1
+        self.vErrmin    = -0.1
 
         self.x_ub = [float('inf')] * self.nx
         

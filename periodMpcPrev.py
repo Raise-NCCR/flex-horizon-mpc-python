@@ -70,7 +70,6 @@ class PeriodMPC:
         # mean_cur = casadi.cumsum(cur)/n
         # diff = cur - mean_cur
         # var = casadi.dot(diff,diff)/n
-        # err = (control[int(U.dDot)]**4)*casadi.sum1(casadi.dot(cur,cur)) # 誤差に関するペナルティをdt^2と曲率の2乗和の積で表現
         err = control[int(U.dDot)]*casadi.sum1(casadi.dot(cur,cur)) # 誤差に関するペナルティをdt^2と曲率の2乗和の積で表現
         state_next = [new_d, err]
         return casadi.vertcat(*state_next)

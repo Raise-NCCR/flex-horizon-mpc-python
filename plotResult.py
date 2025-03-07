@@ -23,14 +23,15 @@ def plotResult(xs, us, refX, refY, show):
     xsAy    = list(row[int(S.ay)] for row in xs)
     xsXjerk = list(row[int(S.xJerk)] for row in xs)
     xsYjerk = list(row[int(S.yJerk)] for row in xs)
+    xsVErr  = list(row[int(S.vErr)] for row in xs)
 
     usJerk  = list(row[int(U.jerk)] for row in us)
     usDelta = list(row[int(U.deltaDot)] for row in us)
 
-    xsComfort = rideComfort(xs)
+    # xsComfort = rideComfort(xs)
 
-    xs = np.load('result/default2/xs.npy')
-    us = np.load('result/default2/us.npy')
+    xs = np.load('result/default3-4/xs.npy')
+    us = np.load('result/default3-4/us.npy')
 
     def_xsD     = list(row[int(S.d)] for row in xs)
     def_xsV     = list(row[int(S.v)] for row in xs)
@@ -51,10 +52,10 @@ def plotResult(xs, us, refX, refY, show):
     def_usJerk  = list(row[int(U.jerk)] for row in us)
     def_usDelta = list(row[int(U.deltaDot)] for row in us)
 
-    def_xsComfort = rideComfort(xs)
+    # def_xsComfort = rideComfort(xs)
     
     ts = np.load('result/ts.npy')
-    def_ts = np.load('result/default2/ts.npy')
+    def_ts = np.load('result/default3-4/ts.npy')
 
     time = xsD
     def_time = def_xsD
@@ -102,6 +103,15 @@ def plotResult(xs, us, refX, refY, show):
     plt.xlabel('t')
     plt.ylabel('compute time')
     plt.legend(['flex','fixed'])
+    plt.grid()
+    plt.show()
+    num += 1
+
+    plt.figure(num)
+    plt.clf()
+    plt.plot(time, xsVErr, '-')
+    plt.xlabel('t')
+    plt.ylabel('speed error between speed patern')
     plt.grid()
     plt.show()
     num += 1

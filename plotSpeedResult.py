@@ -10,7 +10,7 @@ from rideComfort import rideComfort
 def plotSpeedResult(xs, us, refDist, refSpeed, show):
     xsD     = list(float(row[int(S.d)]) for row in xs)
     xsV     = list(float(row[int(S.v)]) for row in xs)
-    xsA     = list(row[int(S.a)] for row in xs)
+    xsA     = list(float(row[int(S.a)]) for row in xs)
     
     usA  = list(row[int(U.a)] for row in us)
     
@@ -19,6 +19,7 @@ def plotSpeedResult(xs, us, refDist, refSpeed, show):
     output_df = pd.DataFrame({
         'd'     :xsD,
         'v'     :xsV,
+        'a'     :xsA,
     })
 
     output_df.to_csv('csv/speed.csv', index=False)

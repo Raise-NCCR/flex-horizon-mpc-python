@@ -10,8 +10,9 @@ from plotResult import plotResult
 
 
 # Closed-loop シミュレーション
-def execPeriodMpc(curDiff, cur_x0, N, dest):
-    mpc = PeriodMPC(N, curDiff, dest)
+def execPeriodMpc(curDiff, acc, cur_x0, N, dest, dt):
+    mpc = PeriodMPC(N, curDiff, acc, dest)
+    # mpc = PeriodMPC(N, curDiff, dest)
 
     F = mpc.make_F()
     mpc.make_nlp()
@@ -23,15 +24,22 @@ def execPeriodMpc(curDiff, cur_x0, N, dest):
 
     x       = casadi.DM.zeros(mpc.nx)
     x[int(S.d)] = cur_x0[int(VS.d)]
-
+    # x[int(S.dDot)] = dt
+    
     us      = []    # 入力
 
     i = 0
     sim_len = N
     while i < sim_len:
         u_opt,x0 = mpc.compute_optimal_control(x,x0)
-        x = F(x=x,u=u_opt)["x_next"]
-        us.append(u_opt)
+        # x = x0[len(S):len(S)*2:]
+        x = F(x=x,u=u_opt[0])["x_next"]
+        # dDot = x[int(S.dDot)]
+        dDot = u_opt[0]
+        us.append(dDot)
         i += 1
+    # u_opt,x0 = mpc.compute_optimal_control(x,x0)
+    # us = x0[mpc.nx+int(S.dDot):mpc.nx*(mpc.N+1):mpc.nx]
+    # print(us)
 
     return casadi.vertcat(*us)

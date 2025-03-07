@@ -27,9 +27,14 @@ speed = df['Speed'].to_numpy()
 df      = pd.read_csv(speedRef)
 d       = df['d'].to_numpy()
 vRef    = df['v'].to_numpy()
+aRef    = df['a'].to_numpy()
 
 speed  = casadi.interpolant('interp', 'linear', [d], vRef)
+acc  = casadi.interpolant('interp', 'linear', [d], aRef)
 curInterp= casadi.interpolant('interp', 'linear', [refDist], cur)
+cur_diff= np.diff(cur)
+curDiff= casadi.interpolant('interp', 'linear', [refDist[0:-1]], cur_diff)
+
 
 
 N = 15
@@ -58,42 +63,48 @@ if sim:
     us      = []    # 入力
     t       = 0 
     times   = [t]   # 時間（経路上の距離）
+    dts     = []
     coorErr = [0]
     speedErr= [0]
 
     p_ts = [0]
+    
+    dt = 3.0
 
 
     sim_len = refDist[-1]
     start = time.process_time()
     while t < 1000 and x[int(S.dist)] < 5 and -5 < x[int(S.dist)]:
         step_start = time.process_time()
-        dt = execPeriodMpc(curInterp, x0, N, refDist[-1])
+        dt = execPeriodMpc(curInterp, acc, x0, N, refDist[-1], dt)
         dt = dt.full().ravel().tolist()
         dt = list(map(lambda y: 1.0 if y < 1.0 else y, dt))
         dt = list(map(lambda y: int(y*10)*0.1, dt))
-        dt,u_opt,x0 = mpc.compute_optimal_control(x,x0,dt)
         step_end = time.process_time()
+        # dt = np.ones(mpc.N)
+        dt,u_opt,x0 = mpc.compute_optimal_control(x,x0,dt)
+        dts.append(dt)
 
-        step = 1.0
+        step = 0.1
         ddt = int(dt/step)
+        print("ot: ", step_end-step_start)
         print("dt: ",dt)
-        for i in range(ddt-1):
+        for i in range(ddt):
             x = F(x=x,u=u_opt,dt=step)["x_next"]
             xs.append(x)
             xx.append(x0)
             us.append(u_opt)
             p_ts.append(step_end-step_start)
-            print('s= ', x[int(S.d)])
-            print('t: ',x[int(S.t)])
-            print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
-            print("v: ", x[int(S.v)])
-            print("theta: ", x[int(S.theta)])
-            print("dist: ", x[int(S.dist)])
-            print("------------------------")
-        dt = dt - (ddt-1)*step
-        if (dt != 0):
-            x = F(x=x,u=u_opt,dt=dt)["x_next"]
+        print('s= ', x[int(S.d)])
+        print('t: ',x[int(S.t)])
+        print("[x,y]: ",[x[int(S.x)], x[int(S.y)]])
+        print("v: ", x[int(S.v)])
+        print("theta: ", x[int(S.theta)])
+        print("dist: ", x[int(S.dist)])
+        print("------------------------")
+        dt1 = dt - ddt*step
+        if (dt1 != 0):
+            x = F(x=x,u=u_opt,dt=dt1)["x_next"]
             # x = x0[len(S):len(S)*2:]
             xs.append(x)
             xx.append(x0)
@@ -143,6 +154,14 @@ if sim:
     output_df.to_csv('result/err.csv', index=False)
 
     xsD     = list(row[int(S.d)].full()[0][0] for row in xs)
+
+    plt.figure()
+    plt.plot(times[1::], dts, '-')
+    plt.plot(times[1::], np.ones(len(times)-1))
+    plt.xlabel('t[m]')
+    plt.ylabel('optimize span[m]')
+    plt.grid()
+    plt.show()
 
     plt.figure()
     plt.plot(times, speedErr, '-')
